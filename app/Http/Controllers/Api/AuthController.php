@@ -19,10 +19,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales inválidas'], 422);
         }
 
-        /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // Opcional: pasar "abilities" (scopes) en el segundo parámetro
         $token = $user->createToken('postman-token', ['*'])->plainTextToken;
 
         return response()->json([
@@ -31,14 +29,12 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // Logout de token actual (revoca el token usado en el Bearer)
     public function logoutToken(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'ok']);
     }
 
-    // Ruta protegida de prueba
     public function me(Request $request)
     {
         return $request->user();
