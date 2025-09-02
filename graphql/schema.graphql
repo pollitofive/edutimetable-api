@@ -1,0 +1,101 @@
+""" Root query """
+type Query {
+  me: User @guard
+  teachers: [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  courses(teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10)
+  schedules(course_id: ID @where, day_of_week: Int @where): [Schedule!]! @paginate(defaultCount: 20)
+}
+
+""" Root mutation """
+type Mutation {
+    createTeacher(input: CreateTeacherInput! @spread): Teacher @guard @create
+    updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
+    deleteTeacher(id: ID! @eq(key: "id")): Teacher @guard @delete(globalId: true)
+
+    createCourse(input: CreateCourseInput! @spread): Course @guard @create
+    updateCourse(id: ID!, input: UpdateCourseInput! @spread): Course @guard @update
+    deleteCourse(id: ID! @eq(key: "id")): Course @guard @delete(globalId: true)
+
+    createSchedule(input: CreateScheduleInput!): Schedule @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateSchedule@__invoke")
+    updateSchedule(id: ID!, input: UpdateScheduleInput! @spread): Schedule @guard @update
+    deleteSchedule(id: ID! @eq(key: "id")): Schedule @guard @delete(globalId: true)
+}
+
+""" Eloquent models """
+type User {
+  id: ID!
+  name: String!
+  email: String!
+}
+
+type Teacher @model(class: "App\\Models\\Teacher") {
+  id: ID!
+  name: String!
+  email: String!
+  courses: [Course!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Course @model(class: "App\\Models\\Course") {
+  id: ID!
+  name: String!
+  level: String
+  year: Int
+  teacher: Teacher! @belongsTo
+  teacher_id: ID!
+  schedules: [Schedule!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Schedule @model(class: "App\\Models\\Schedule") {
+  id: ID!
+  course: Course! @belongsTo
+  course_id: ID!
+  day_of_week: Int!
+  starts_at: String!
+  ends_at: String!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+""" Inputs """
+input CreateTeacherInput {
+  name: String!
+  email: String!
+}
+
+input UpdateTeacherInput {
+  name: String
+  email: String
+}
+
+input CreateCourseInput {
+  name: String!
+  level: String
+  year: Int
+  teacher_id: ID!
+}
+
+input UpdateCourseInput {
+  name: String
+  level: String
+  year: Int
+  teacher_id: ID
+}
+
+input CreateScheduleInput {
+  course_id: ID!
+  day_of_week: Int!   # 0..6
+  starts_at: String!  # "HH:mm"
+  ends_at: String!    # "HH:mm"
+}
+
+input UpdateScheduleInput {
+  course_id: ID
+  day_of_week: Int
+  starts_at: String
+  ends_at: String
+}
