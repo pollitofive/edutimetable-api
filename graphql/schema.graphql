@@ -5,7 +5,7 @@ scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date
 type Query {
   me: User @guard @auth
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  courses(teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10)
+  courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where, teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, day_of_week: Int @where): [Schedule!]! @paginate(defaultCount: 20)
 }
 
