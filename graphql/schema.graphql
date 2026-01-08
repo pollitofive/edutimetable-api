@@ -6,6 +6,7 @@ type Query {
   me: User @guard @auth
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where, teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  students(name: String @where(operator: "like"), email: String @where(operator: "like"), code: String @where(operator: "like")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, day_of_week: Int @where): [Schedule!]! @paginate(defaultCount: 20)
 }
 
@@ -18,6 +19,10 @@ type Mutation {
     createCourse(input: CreateCourseInput! @spread): Course @guard @create
     updateCourse(id: ID!, input: UpdateCourseInput! @spread): Course @guard @update
     deleteCourse(id: ID! @eq(key: "id")): Course @guard @delete(globalId: true)
+
+    createStudent(input: CreateStudentInput! @spread): Student @guard @create
+    updateStudent(id: ID!, input: UpdateStudentInput! @spread): Student @guard @update
+    deleteStudent(id: ID! @eq(key: "id")): Student @guard @delete(globalId: true)
 
     createSchedule(input: CreateScheduleInput!): Schedule @guard
       @field(resolver: "App\\GraphQL\\Mutations\\CreateSchedule@__invoke")
@@ -49,6 +54,15 @@ type Course @model(class: "App\\Models\\Course") {
   teacher: Teacher! @belongsTo
   teacher_id: ID!
   schedules: [Schedule!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Student @model(class: "App\\Models\\Student") {
+  id: ID!
+  name: String!
+  email: String!
+  code: String!
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -87,6 +101,18 @@ input UpdateCourseInput {
   level: String
   year: Int
   teacher_id: ID
+}
+
+input CreateStudentInput {
+  name: String!
+  email: String!
+  code: String!
+}
+
+input UpdateStudentInput {
+  name: String
+  email: String
+  code: String
 }
 
 input CreateScheduleInput {
