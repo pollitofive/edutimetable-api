@@ -8,6 +8,8 @@ type Query {
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where, teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(name: String @where(operator: "like"), email: String @where(operator: "like"), code: String @where(operator: "like")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, day_of_week: Int @where): [Schedule!]! @paginate(defaultCount: 20)
+  studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
+  studentAvailability(id: ID! @eq): StudentAvailability @find
 }
 
 """ Root mutation """
@@ -28,6 +30,16 @@ type Mutation {
       @field(resolver: "App\\GraphQL\\Mutations\\CreateSchedule@__invoke")
     updateSchedule(id: ID!, input: UpdateScheduleInput! @spread): Schedule @guard @update
     deleteSchedule(id: ID! @eq(key: "id")): Schedule @guard @delete(globalId: true)
+
+    createStudentAvailability(input: CreateStudentAvailabilityInput! @spread): StudentAvailability @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateStudentAvailability@__invoke")
+    updateStudentAvailability(id: ID!, input: UpdateStudentAvailabilityInput! @spread): StudentAvailability @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateStudentAvailability@__invoke")
+    deleteStudentAvailability(id: ID! @eq(key: "id")): StudentAvailability @guard @delete(globalId: true)
+    bulkCreateStudentAvailabilities(input: BulkCreateStudentAvailabilitiesInput! @spread): [StudentAvailability!]! @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\BulkCreateStudentAvailabilities@__invoke")
+    bulkUpdateStudentAvailabilities(input: BulkUpdateStudentAvailabilitiesInput! @spread): [StudentAvailability!]! @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\BulkUpdateStudentAvailabilities@__invoke")
 }
 
 """ Eloquent models """
@@ -63,6 +75,18 @@ type Student @model(class: "App\\Models\\Student") {
   name: String!
   email: String!
   code: String!
+  availabilities: [StudentAvailability!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type StudentAvailability @model(class: "App\\Models\\StudentAvailability") {
+  id: ID!
+  student_id: ID!
+  student: Student! @belongsTo
+  day_of_week: Int!
+  start_time: String!
+  end_time: String!
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -127,4 +151,34 @@ input UpdateScheduleInput {
   day_of_week: Int
   starts_at: String
   ends_at: String
+}
+
+input CreateStudentAvailabilityInput {
+  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
+  start_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/", "before:end_time"])
+  end_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/", "after:start_time"])
+}
+
+input UpdateStudentAvailabilityInput {
+  student_id: ID @rules(apply: ["exists:students,id"])
+  day_of_week: Int @rules(apply: ["integer", "min:0", "max:6"])
+  start_time: String @rules(apply: ["regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  end_time: String @rules(apply: ["regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+}
+
+input StudentAvailabilitySlotInput {
+  day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
+  start_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  end_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+}
+
+input BulkCreateStudentAvailabilitiesInput {
+  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  availabilities: [StudentAvailabilitySlotInput!]! @rules(apply: ["required", "array", "min:1"])
+}
+
+input BulkUpdateStudentAvailabilitiesInput {
+  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  availabilities: [StudentAvailabilitySlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
