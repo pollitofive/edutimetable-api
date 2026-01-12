@@ -18,12 +18,18 @@ class ScheduleFactory extends Factory
      */
     public function definition(): array
     {
-        $start = $this->faker->numberBetween(8, 18);     // 08..18
-        $end   = $start + 1;                              // 1h duration
+        static $counter = 0;
+        $counter++;
+
+        // Use a sequence to avoid duplicates
+        $dayOfWeek = ($counter % 5) + 1; // 1..5 (Mon..Fri)
+        $hour = 8 + (($counter * 2) % 10); // 8, 10, 12, 14, 16, 8, 10...
+        $start = $hour;
+        $end = $start + 2; // 2h duration
 
         return [
             'course_id'  => Course::factory(),
-            'day_of_week'=> $this->faker->numberBetween(1, 5), // Mon..Fri
+            'day_of_week'=> $dayOfWeek,
             'starts_at'  => sprintf('%02d:00:00', $start),
             'ends_at'    => sprintf('%02d:00:00', $end),
         ];

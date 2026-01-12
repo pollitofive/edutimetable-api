@@ -28,7 +28,8 @@ type Mutation {
 
     createSchedule(input: CreateScheduleInput!): Schedule @guard
       @field(resolver: "App\\GraphQL\\Mutations\\CreateSchedule@__invoke")
-    updateSchedule(id: ID!, input: UpdateScheduleInput! @spread): Schedule @guard @update
+    updateSchedule(id: ID!, input: UpdateScheduleInput!): Schedule @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateSchedule@__invoke")
     deleteSchedule(id: ID! @eq(key: "id")): Schedule @guard @delete(globalId: true)
 
     createStudentAvailability(input: CreateStudentAvailabilityInput! @spread): StudentAvailability @guard
@@ -40,6 +41,11 @@ type Mutation {
       @field(resolver: "App\\GraphQL\\Mutations\\BulkCreateStudentAvailabilities@__invoke")
     bulkUpdateStudentAvailabilities(input: BulkUpdateStudentAvailabilitiesInput! @spread): [StudentAvailability!]! @guard
       @field(resolver: "App\\GraphQL\\Mutations\\BulkUpdateStudentAvailabilities@__invoke")
+
+    bulkCreateSchedules(input: BulkCreateSchedulesInput! @spread): [Schedule!]! @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\BulkCreateSchedules@__invoke")
+    bulkUpdateSchedules(input: BulkUpdateSchedulesInput! @spread): [Schedule!]! @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\BulkUpdateSchedules@__invoke")
 }
 
 """ Eloquent models """
@@ -181,4 +187,20 @@ input BulkCreateStudentAvailabilitiesInput {
 input BulkUpdateStudentAvailabilitiesInput {
   student_id: ID! @rules(apply: ["required", "exists:students,id"])
   availabilities: [StudentAvailabilitySlotInput!]! @rules(apply: ["required", "array", "min:1"])
+}
+
+input ScheduleSlotInput {
+  day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
+  starts_at: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  ends_at: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+}
+
+input BulkCreateSchedulesInput {
+  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
+}
+
+input BulkUpdateSchedulesInput {
+  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
