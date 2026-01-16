@@ -12,7 +12,10 @@ trait ValidatesScheduleOverlaps
      * Two time slots overlap if:
      * (starts_at_1 < ends_at_2) AND (ends_at_1 > starts_at_2)
      *
-     * @param int $courseId
+     * CHANGED: Now checks for TEACHER overlap instead of COURSE overlap
+     * This prevents the same teacher from teaching multiple courses at the same time
+     *
+     * @param int $teacherId
      * @param int $dayOfWeek
      * @param string $startsAt
      * @param string $endsAt
@@ -20,13 +23,13 @@ trait ValidatesScheduleOverlaps
      * @return bool
      */
     protected function hasOverlapWithDatabase(
-        int $courseId,
+        int $teacherId,
         int $dayOfWeek,
         string $startsAt,
         string $endsAt,
         ?int $excludeId = null
     ): bool {
-        $query = Schedule::where('course_id', $courseId)
+        $query = Schedule::where('teacher_id', $teacherId)
             ->where('day_of_week', $dayOfWeek)
             ->where(function ($q) use ($startsAt, $endsAt) {
                 // Overlap condition: new slot overlaps if it starts before existing ends
@@ -94,7 +97,9 @@ trait ValidatesScheduleOverlaps
     /**
      * Find the overlapping schedule from database
      *
-     * @param int $courseId
+     * CHANGED: Now checks for TEACHER overlap instead of COURSE overlap
+     *
+     * @param int $teacherId
      * @param int $dayOfWeek
      * @param string $startsAt
      * @param string $endsAt
@@ -102,13 +107,13 @@ trait ValidatesScheduleOverlaps
      * @return Schedule|null
      */
     protected function findOverlappingSchedule(
-        int $courseId,
+        int $teacherId,
         int $dayOfWeek,
         string $startsAt,
         string $endsAt,
         ?int $excludeId = null
     ): ?Schedule {
-        $query = Schedule::where('course_id', $courseId)
+        $query = Schedule::where('teacher_id', $teacherId)
             ->where('day_of_week', $dayOfWeek)
             ->where(function ($q) use ($startsAt, $endsAt) {
                 $q->where('starts_at', '<', $endsAt)

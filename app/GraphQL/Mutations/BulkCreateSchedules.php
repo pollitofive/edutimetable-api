@@ -6,6 +6,7 @@ use App\GraphQL\Validators\Concerns\ValidatesScheduleOverlaps;
 use App\Models\Course;
 use App\Models\Schedule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class BulkCreateSchedules
@@ -23,6 +24,7 @@ class BulkCreateSchedules
     public function __invoke($_, array $args)
     {
         $courseId = (int) $args['course_id'];
+        $description = $args['description']; // Required field
         $schedules = $args['schedules'];
 
         // Validate at least one schedule is provided
@@ -38,21 +40,27 @@ class BulkCreateSchedules
         // Validate all slots before processing
         $this->validateSchedules($course->id, $schedules);
 
-        $createdSchedules = DB::transaction(function () use ($course, $schedules) {
+        $createdSchedules = DB::transaction(function () use ($course, $description, $schedules) {
             $created = collect();
+
+            // Generate a single UUID for all schedules in this batch
+            $groupId = (string) Str::uuid();
 
             foreach ($schedules as $schedule) {
                 // Normalize time format to HH:MM:SS for database
                 $startsAt = $this->normalizeTime($schedule['starts_at']);
                 $endsAt = $this->normalizeTime($schedule['ends_at']);
 
-                // Create schedule
+                // Create schedule with teacher_id, description, and group_id
                 $created->push(
                     Schedule::create([
                         'course_id' => $course->id,
+                        'teacher_id' => (int) $schedule['teacher_id'],
                         'day_of_week' => (int) $schedule['day_of_week'],
                         'starts_at' => $startsAt,
                         'ends_at' => $endsAt,
+                        'description' => $description,
+                        'group_id' => $groupId,
                     ])
                 );
             }
@@ -66,6 +74,8 @@ class BulkCreateSchedules
     /**
      * Validate all schedules for overlaps and time constraints
      *
+     * CHANGED: Now validates TEACHER conflicts instead of COURSE conflicts
+     *
      * @param int $courseId
      * @param array $schedules
      * @throws ValidationException
@@ -75,6 +85,21 @@ class BulkCreateSchedules
         foreach ($schedules as $index => $schedule) {
             $slotNumber = $index + 1;
             $dayName = $this->getDayName((int) $schedule['day_of_week']);
+
+            // Validate teacher_id is present
+            if (!isset($schedule['teacher_id'])) {
+                throw ValidationException::withMessages([
+                    'schedules' => [
+                        sprintf(
+                            'Schedule slot #%d (%s %s-%s): teacher_id is required.',
+                            $slotNumber,
+                            $dayName,
+                            $schedule['starts_at'],
+                            $schedule['ends_at']
+                        )
+                    ]
+                ]);
+            }
 
             // Validate time constraint (end time must be after start time)
             if ($schedule['starts_at'] >= $schedule['ends_at']) {
@@ -91,9 +116,9 @@ class BulkCreateSchedules
                 ]);
             }
 
-            // Check for overlaps with existing database schedules
+            // CHANGED: Check for overlaps with existing database schedules based on TEACHER
             $overlapping = $this->findOverlappingSchedule(
-                $courseId,
+                (int) $schedule['teacher_id'],  // CHANGED from courseId to teacherId
                 (int) $schedule['day_of_week'],
                 $this->normalizeTime($schedule['starts_at']),
                 $this->normalizeTime($schedule['ends_at'])
@@ -103,7 +128,7 @@ class BulkCreateSchedules
                 throw ValidationException::withMessages([
                     'schedules' => [
                         sprintf(
-                            'Schedule slot #%d (%s %s-%s) overlaps with an existing schedule from %s to %s.',
+                            'Schedule slot #%d (%s %s-%s): Teacher already has a schedule from %s to %s.',
                             $slotNumber,
                             $dayName,
                             $schedule['starts_at'],
@@ -115,35 +140,39 @@ class BulkCreateSchedules
                 ]);
             }
 
-            // Check for overlaps within the input array itself
+            // CHANGED: Check for teacher conflicts within the input array itself
+            // Same teacher cannot teach multiple slots at the same time
             for ($j = 0; $j < $index; $j++) {
                 $otherSlot = $schedules[$j];
                 $otherSlotNumber = $j + 1;
 
-                if ($this->slotsOverlap(
-                    (int) $schedule['day_of_week'],
-                    $this->normalizeTime($schedule['starts_at']),
-                    $this->normalizeTime($schedule['ends_at']),
-                    (int) $otherSlot['day_of_week'],
-                    $this->normalizeTime($otherSlot['starts_at']),
-                    $this->normalizeTime($otherSlot['ends_at'])
-                )) {
-                    $otherDayName = $this->getDayName((int) $otherSlot['day_of_week']);
-                    throw ValidationException::withMessages([
-                        'schedules' => [
-                            sprintf(
-                                'Schedule slot #%d (%s %s-%s) overlaps with slot #%d (%s %s-%s).',
-                                $slotNumber,
-                                $dayName,
-                                $schedule['starts_at'],
-                                $schedule['ends_at'],
-                                $otherSlotNumber,
-                                $otherDayName,
-                                $otherSlot['starts_at'],
-                                $otherSlot['ends_at']
-                            )
-                        ]
-                    ]);
+                // Only check if same teacher
+                if ((int) $schedule['teacher_id'] === (int) $otherSlot['teacher_id']) {
+                    if ($this->slotsOverlap(
+                        (int) $schedule['day_of_week'],
+                        $this->normalizeTime($schedule['starts_at']),
+                        $this->normalizeTime($schedule['ends_at']),
+                        (int) $otherSlot['day_of_week'],
+                        $this->normalizeTime($otherSlot['starts_at']),
+                        $this->normalizeTime($otherSlot['ends_at'])
+                    )) {
+                        $otherDayName = $this->getDayName((int) $otherSlot['day_of_week']);
+                        throw ValidationException::withMessages([
+                            'schedules' => [
+                                sprintf(
+                                    'Schedule slot #%d (%s %s-%s): Teacher conflict with slot #%d (%s %s-%s).',
+                                    $slotNumber,
+                                    $dayName,
+                                    $schedule['starts_at'],
+                                    $schedule['ends_at'],
+                                    $otherSlotNumber,
+                                    $otherDayName,
+                                    $otherSlot['starts_at'],
+                                    $otherSlot['ends_at']
+                                )
+                            ]
+                        ]);
+                    }
                 }
             }
         }

@@ -5,9 +5,9 @@ scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date
 type Query {
   me: User @guard @auth
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where, teacher_id: ID @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(name: String @where(operator: "like"), email: String @where(operator: "like"), code: String @where(operator: "like")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  schedules(course_id: ID @where, day_of_week: Int @where): [Schedule!]! @paginate(defaultCount: 20)
+  schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where, group_id: String @where): [Schedule!]! @paginate(defaultCount: 20)
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
 }
@@ -59,7 +59,8 @@ type Teacher @model(class: "App\\Models\\Teacher") {
   id: ID!
   name: String!
   email: String!
-  courses: [Course!]! @hasMany
+  courses: [Course!]! @belongsToMany(relation: "courses")
+  schedules: [Schedule!]! @hasMany
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -69,8 +70,7 @@ type Course @model(class: "App\\Models\\Course") {
   name: String!
   level: String
   year: Int
-  teacher: Teacher! @belongsTo
-  teacher_id: ID!
+  teachers: [Teacher!]! @belongsToMany(relation: "teachers")
   schedules: [Schedule!]! @hasMany
   created_at: DateTime!
   updated_at: DateTime!
@@ -101,9 +101,13 @@ type Schedule @model(class: "App\\Models\\Schedule") {
   id: ID!
   course: Course! @belongsTo
   course_id: ID!
+  teacher: Teacher! @belongsTo
+  teacher_id: ID!
   day_of_week: Int!
   starts_at: String!
   ends_at: String!
+  description: String!
+  group_id: String
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -123,14 +127,12 @@ input CreateCourseInput {
   name: String!
   level: String
   year: Int
-  teacher_id: ID!
 }
 
 input UpdateCourseInput {
   name: String
   level: String
   year: Int
-  teacher_id: ID
 }
 
 input CreateStudentInput {
@@ -146,37 +148,42 @@ input UpdateStudentInput {
 }
 
 input CreateScheduleInput {
-  course_id: ID!
-  day_of_week: Int!   # 0..6
-  starts_at: String!  # "HH:mm"
-  ends_at: String!    # "HH:mm"
+  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
+  day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
+  starts_at: String! @rules(apply: ["required", "date_format:H:i"])
+  ends_at: String! @rules(apply: ["required", "date_format:H:i"])
+  description: String!
 }
 
 input UpdateScheduleInput {
-  course_id: ID
-  day_of_week: Int
-  starts_at: String
-  ends_at: String
+  course_id: ID @rules(apply: ["exists:courses,id"])
+  teacher_id: ID @rules(apply: ["exists:teachers,id"])
+  day_of_week: Int @rules(apply: ["integer", "min:0", "max:6"])
+  starts_at: String @rules(apply: ["date_format:H:i"])
+  ends_at: String @rules(apply: ["date_format:H:i"])
+  description: String
+  group_id: String
 }
 
 input CreateStudentAvailabilityInput {
   student_id: ID! @rules(apply: ["required", "exists:students,id"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
-  start_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/", "before:end_time"])
-  end_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/", "after:start_time"])
+  start_time: String! @rules(apply: ["required", "date_format:H:i", "before:end_time"])
+  end_time: String! @rules(apply: ["required", "date_format:H:i", "after:start_time"])
 }
 
 input UpdateStudentAvailabilityInput {
   student_id: ID @rules(apply: ["exists:students,id"])
   day_of_week: Int @rules(apply: ["integer", "min:0", "max:6"])
-  start_time: String @rules(apply: ["regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
-  end_time: String @rules(apply: ["regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  start_time: String @rules(apply: ["date_format:H:i"])
+  end_time: String @rules(apply: ["date_format:H:i"])
 }
 
 input StudentAvailabilitySlotInput {
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
-  start_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
-  end_time: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  start_time: String! @rules(apply: ["required", "date_format:H:i"])
+  end_time: String! @rules(apply: ["required", "date_format:H:i"])
 }
 
 input BulkCreateStudentAvailabilitiesInput {
@@ -190,17 +197,21 @@ input BulkUpdateStudentAvailabilitiesInput {
 }
 
 input ScheduleSlotInput {
+  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
-  starts_at: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
-  ends_at: String! @rules(apply: ["required", "regex:/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/"])
+  starts_at: String! @rules(apply: ["required", "date_format:H:i"])
+  ends_at: String! @rules(apply: ["required", "date_format:H:i"])
 }
 
 input BulkCreateSchedulesInput {
   course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  description: String!
   schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 
 input BulkUpdateSchedulesInput {
   course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  description: String!
+  group_id: String
   schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }

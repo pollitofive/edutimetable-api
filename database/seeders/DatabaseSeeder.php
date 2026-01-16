@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\Schedule;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,24 +22,32 @@ class DatabaseSeeder extends Seeder
         // Create test user
         User::factory()->create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password')
         ]);
 
-        // Create teachers
-        Teacher::factory(10)->create();
+        // Create teachers FIRST
+        $teachers = Teacher::factory(10)->create();
 
         // Create students
         Student::factory(20)->create();
 
-        // Create courses
-        Course::factory(15)->create();
+        // Create courses WITHOUT teachers
+        $courses = Course::factory(15)->create();
 
-        // Create schedules for courses (1-3 schedules per course)
-        $courses = Course::all();
+        // Create schedules with explicit course AND teacher
         foreach ($courses as $course) {
-            Schedule::factory(rand(1, 3))->create([
-                'course_id' => $course->id
-            ]);
+            $numSchedules = rand(1, 3);
+
+            for ($i = 0; $i < $numSchedules; $i++) {
+                // Randomly assign a teacher to each schedule
+                $randomTeacher = $teachers->random();
+
+                Schedule::factory()->create([
+                    'course_id' => $course->id,
+                    'teacher_id' => $randomTeacher->id,  // NEW
+                ]);
+            }
         }
 
         StudentAvailability::factory(10)->create();

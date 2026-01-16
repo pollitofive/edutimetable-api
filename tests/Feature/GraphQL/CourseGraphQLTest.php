@@ -23,16 +23,11 @@ it('can create a course via GraphQL', function () {
                 name: \"Mathematics 101\"
                 level: \"Beginner\"
                 year: 2024
-                teacher_id: {$this->teacher->id}
             }) {
                 id
                 name
                 level
                 year
-                teacher {
-                    id
-                    name
-                }
             }
         }
     ";
@@ -45,10 +40,6 @@ it('can create a course via GraphQL', function () {
                 'name' => 'Mathematics 101',
                 'level' => 'Beginner',
                 'year' => 2024,
-                'teacher' => [
-                    'id' => (string) $this->teacher->id,
-                    'name' => $this->teacher->name,
-                ]
             ]
         ]
     ]);
@@ -56,22 +47,20 @@ it('can create a course via GraphQL', function () {
     expect(Course::count())->toBe(1);
 });
 
-it('can query courses by teacher via GraphQL', function () {
+it('can query courses via GraphQL', function () {
     $teacher2 = Teacher::factory()->create();
-    
-    Course::factory()->count(2)->create(['teacher_id' => $this->teacher->id]);
-    Course::factory()->create(['teacher_id' => $teacher2->id]);
+
+    // Create courses (courses don't have teacher_id anymore)
+    Course::factory()->count(3)->create();
 
     $query = "
         query {
-            courses(teacher_id: {$this->teacher->id}) {
+            courses {
                 data {
                     id
                     name
-                    teacher {
-                        id
-                        name
-                    }
+                    level
+                    year
                 }
             }
         }
@@ -79,16 +68,11 @@ it('can query courses by teacher via GraphQL', function () {
 
     $response = $this->postGraphQL(['query' => $query]);
 
-    $response->assertJsonCount(2, 'data.courses.data');
-    
-    $courseData = $response->json('data.courses.data');
-    foreach ($courseData as $course) {
-        expect($course['teacher']['id'])->toBe((string) $this->teacher->id);
-    }
+    $response->assertJsonCount(3, 'data.courses.data');
 });
 
 it('can update a course via GraphQL', function () {
-    $course = Course::factory()->create(['teacher_id' => $this->teacher->id]);
+    $course = Course::factory()->create();
 
     $mutation = "
         mutation {
@@ -121,17 +105,13 @@ it('can update a course via GraphQL', function () {
 });
 
 it('can delete a course via GraphQL', function () {
-    $course = Course::factory()->create(['teacher_id' => $this->teacher->id]);
+    $course = Course::factory()->create();
 
     $mutation = "
         mutation {
             deleteCourse(id: {$course->id}) {
                 id
                 name
-                teacher {
-                    id
-                    name
-                }
             }
         }
     ";

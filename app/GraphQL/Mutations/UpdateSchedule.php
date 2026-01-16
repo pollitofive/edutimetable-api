@@ -21,6 +21,10 @@ class UpdateSchedule
             $updateData['course_id'] = (int) $data['course_id'];
         }
 
+        if (isset($data['teacher_id'])) {
+            $updateData['teacher_id'] = (int) $data['teacher_id'];
+        }
+
         if (isset($data['day_of_week'])) {
             $updateData['day_of_week'] = (int) $data['day_of_week'];
         }
@@ -31,6 +35,10 @@ class UpdateSchedule
 
         if (isset($data['ends_at'])) {
             $updateData['ends_at'] = $data['ends_at'];
+        }
+
+        if (isset($data['description'])) {
+            $updateData['description'] = $data['description'];
         }
 
         return $this->service->updateSchedule($scheduleId, $updateData);

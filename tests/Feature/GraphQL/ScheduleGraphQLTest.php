@@ -16,7 +16,7 @@ beforeEach(function () {
     Sanctum::actingAs($this->user);
 
     $this->teacher = Teacher::factory()->create();
-    $this->course = Course::factory()->create(['teacher_id' => $this->teacher->id]);
+    $this->course = Course::factory()->create();
 });
 
 it('can create a schedule via GraphQL', function () {
@@ -24,6 +24,8 @@ it('can create a schedule via GraphQL', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"09:00\"
                 ends_at: \"10:00\"
@@ -63,6 +65,7 @@ it('prevents overlapping schedules for same course and day', function () {
     // Create existing schedule
     Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00',
         'ends_at' => '10:00',
@@ -73,6 +76,8 @@ it('prevents overlapping schedules for same course and day', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"09:30\"
                 ends_at: \"10:30\"
@@ -87,7 +92,7 @@ it('prevents overlapping schedules for same course and day', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'Schedule overlaps an existing timeslot for this course and day'
+                'message' => 'Teacher already has a schedule at this time on this day'
             ]
         ]
     ]);
@@ -99,6 +104,7 @@ it('allows non-overlapping schedules for same course and day', function () {
     // Create existing schedule
     Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00',
         'ends_at' => '10:00',
@@ -109,6 +115,8 @@ it('allows non-overlapping schedules for same course and day', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"11:00\"
                 ends_at: \"12:00\"
@@ -135,10 +143,16 @@ it('allows non-overlapping schedules for same course and day', function () {
 });
 
 it('can query schedules by course via GraphQL', function () {
-    $course2 = Course::factory()->create(['teacher_id' => $this->teacher->id]);
+    $course2 = Course::factory()->create();
 
-    Schedule::factory()->count(2)->create(['course_id' => $this->course->id]);
-    Schedule::factory()->create(['course_id' => $course2->id]);
+    Schedule::factory()->count(2)->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
+    Schedule::factory()->create([
+        'course_id' => $course2->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
 
     $query = "
         query {
@@ -169,10 +183,12 @@ it('can query schedules by course via GraphQL', function () {
 it('can query schedules by day of week via GraphQL', function () {
     Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1
     ]);
     Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 2
     ]);
 
@@ -194,7 +210,10 @@ it('can query schedules by day of week via GraphQL', function () {
 });
 
 it('can update a schedule via GraphQL', function () {
-    $schedule = Schedule::factory()->create(['course_id' => $this->course->id]);
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
 
     $mutation = "
         mutation {
@@ -226,7 +245,10 @@ it('can update a schedule via GraphQL', function () {
 });
 
 it('can delete a schedule via GraphQL', function () {
-    $schedule = Schedule::factory()->create(['course_id' => $this->course->id]);
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
 
     $mutation = "
         mutation {
@@ -295,6 +317,7 @@ it('can delete a schedule via GraphQL', function () {
 it('allows updating schedule to non-overlapping time', function () {
     $schedule1 = Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00:00',
         'ends_at' => '10:00:00',
@@ -302,6 +325,7 @@ it('allows updating schedule to non-overlapping time', function () {
 
     $schedule2 = Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '11:00:00',
         'ends_at' => '12:00:00',
@@ -336,6 +360,7 @@ it('allows updating schedule to non-overlapping time', function () {
 it('allows schedule to overlap with itself when updating', function () {
     $schedule = Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00:00',
         'ends_at' => '10:00:00',
@@ -372,6 +397,8 @@ it('validates invalid time format on create', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"25:00\"
                 ends_at: \"26:00\"
@@ -391,6 +418,8 @@ it('validates start time before end time on create', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"15:00\"
                 ends_at: \"14:00\"
@@ -416,6 +445,8 @@ it('validates day of week range on create', function () {
         mutation {
             createSchedule(input: {
                 course_id: {$this->course->id}
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 7
                 starts_at: \"09:00\"
                 ends_at: \"10:00\"
@@ -435,6 +466,8 @@ it('validates course exists on create', function () {
         mutation {
             createSchedule(input: {
                 course_id: 99999
+                teacher_id: {$this->teacher->id}
+                description: \"Test Schedule\"
                 day_of_week: 1
                 starts_at: \"09:00\"
                 ends_at: \"10:00\"
@@ -452,6 +485,7 @@ it('validates course exists on create', function () {
 it('allows updating to different day of week', function () {
     $schedule = Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00:00',
         'ends_at' => '10:00:00',
@@ -480,10 +514,11 @@ it('allows updating to different day of week', function () {
 });
 
 it('allows updating to different course', function () {
-    $course2 = Course::factory()->create(['teacher_id' => $this->teacher->id]);
+    $course2 = Course::factory()->create();
 
     $schedule = Schedule::factory()->create([
         'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
         'day_of_week' => 1,
         'starts_at' => '09:00:00',
         'ends_at' => '10:00:00',
