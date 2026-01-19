@@ -16,8 +16,8 @@ class BulkCreateStudentAvailabilities
      * Create multiple student availabilities in bulk
      *
      * @param  null  $_
-     * @param  array  $args
      * @return \Illuminate\Support\Collection
+     *
      * @throws ValidationException
      */
     public function __invoke($_, array $args)
@@ -28,7 +28,7 @@ class BulkCreateStudentAvailabilities
         // Validate at least one availability is provided
         if (empty($availabilities)) {
             throw ValidationException::withMessages([
-                'availabilities' => ['At least one availability slot is required.']
+                'availabilities' => ['At least one availability slot is required.'],
             ]);
         }
 
@@ -62,8 +62,6 @@ class BulkCreateStudentAvailabilities
     /**
      * Validate all availabilities for overlaps and time constraints
      *
-     * @param int $studentId
-     * @param array $availabilities
      * @throws ValidationException
      */
     protected function validateAvailabilities(int $studentId, array $availabilities): void
@@ -82,8 +80,8 @@ class BulkCreateStudentAvailabilities
                             $dayName,
                             $availability['start_time'],
                             $availability['end_time']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -106,8 +104,8 @@ class BulkCreateStudentAvailabilities
                             substr($availability['end_time'], 0, 5),
                             substr($overlapping->start_time, 0, 5),
                             substr($overlapping->end_time, 0, 5)
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -137,8 +135,8 @@ class BulkCreateStudentAvailabilities
                                 $otherDayName,
                                 substr($otherSlot['start_time'], 0, 5),
                                 substr($otherSlot['end_time'], 0, 5)
-                            )
-                        ]
+                            ),
+                        ],
                     ]);
                 }
             }

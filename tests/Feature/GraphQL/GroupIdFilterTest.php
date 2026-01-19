@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -27,7 +27,7 @@ it('can filter schedules by group_id', function () {
         'starts_at' => '09:00',
         'ends_at' => '10:00',
         'description' => 'Test Schedule Group',
-        'group_id' => $groupId
+        'group_id' => $groupId,
     ]);
 
     Schedule::factory()->create([
@@ -37,7 +37,7 @@ it('can filter schedules by group_id', function () {
         'starts_at' => '14:00',
         'ends_at' => '15:00',
         'description' => 'Test Schedule Group',
-        'group_id' => $groupId
+        'group_id' => $groupId,
     ]);
 
     // Create a schedule with different group_id
@@ -48,7 +48,7 @@ it('can filter schedules by group_id', function () {
         'starts_at' => '11:00',
         'ends_at' => '12:00',
         'description' => 'Other Schedule',
-        'group_id' => 'other-group-456'
+        'group_id' => 'other-group-456',
     ]);
 
     // Query for schedules with specific group_id
@@ -75,10 +75,10 @@ it('can filter schedules by group_id', function () {
             'schedules' => [
                 'paginatorInfo' => [
                     'total' => 2,
-                    'count' => 2
-                ]
-            ]
-        ]
+                    'count' => 2,
+                ],
+            ],
+        ],
     ]);
 
     // Verify both schedules have correct group_id

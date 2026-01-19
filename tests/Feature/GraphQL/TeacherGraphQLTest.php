@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
 use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -35,8 +35,8 @@ it('can create a teacher via GraphQL', function () {
             'createTeacher' => [
                 'name' => 'John Doe',
                 'email' => 'john@example.com',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Teacher::count())->toBe(1);
@@ -46,7 +46,7 @@ it('can create a teacher via GraphQL', function () {
 it('can update a teacher via GraphQL', function () {
     $teacher = Teacher::factory()->create([
         'name' => 'Jane Doe',
-        'email' => 'jane@example.com'
+        'email' => 'jane@example.com',
     ]);
 
     $mutation = "
@@ -70,8 +70,8 @@ it('can update a teacher via GraphQL', function () {
                 'id' => (string) $teacher->id,
                 'name' => 'Jane Smith',
                 'email' => 'jane.smith@example.com',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     $teacher->refresh();
@@ -99,8 +99,8 @@ it('can delete a teacher via GraphQL', function () {
                 'id' => (string) $teacher->id,
                 'name' => $teacher->name,
                 'email' => $teacher->email,
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Teacher::count())->toBe(0);
@@ -145,8 +145,8 @@ it('requires authentication for teacher mutations', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'Unauthenticated.'
-            ]
-        ]
+                'message' => 'Unauthenticated.',
+            ],
+        ],
     ]);
 })->skip('Authentication required');

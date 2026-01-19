@@ -17,8 +17,8 @@ class BulkUpdateSchedules
      * Replace all course schedules with new ones
      *
      * @param  null  $_
-     * @param  array  $args
      * @return \Illuminate\Support\Collection
+     *
      * @throws ValidationException
      */
     public function __invoke($_, array $args)
@@ -28,10 +28,10 @@ class BulkUpdateSchedules
         $groupId = $args['group_id'] ?? null; // Optional - sent by frontend for updates
         $schedules = $args['schedules'];
 
-       // Validate at least one schedule is provided
+        // Validate at least one schedule is provided
         if (empty($schedules)) {
             throw ValidationException::withMessages([
-                'schedules' => ['At least one schedule slot is required.']
+                'schedules' => ['At least one schedule slot is required.'],
             ]);
         }
 
@@ -87,9 +87,6 @@ class BulkUpdateSchedules
      * CHANGED: Now validates TEACHER conflicts instead of COURSE conflicts
      * Checks both database overlaps (excluding current group) and internal overlaps
      *
-     * @param int $courseId
-     * @param array $schedules
-     * @param string|null $groupId
      * @throws ValidationException
      */
     protected function validateSchedules(int $courseId, array $schedules, ?string $groupId = null): void
@@ -99,7 +96,7 @@ class BulkUpdateSchedules
             $dayName = $this->getDayName((int) $schedule['day_of_week']);
 
             // Validate teacher_id is present
-            if (!isset($schedule['teacher_id'])) {
+            if (! isset($schedule['teacher_id'])) {
                 throw ValidationException::withMessages([
                     'schedules' => [
                         sprintf(
@@ -108,8 +105,8 @@ class BulkUpdateSchedules
                             $dayName,
                             $schedule['starts_at'],
                             $schedule['ends_at']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -123,8 +120,8 @@ class BulkUpdateSchedules
                             $dayName,
                             $schedule['starts_at'],
                             $schedule['ends_at']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -137,7 +134,7 @@ class BulkUpdateSchedules
                     $startsAt = $this->normalizeTime($schedule['starts_at']);
                     $endsAt = $this->normalizeTime($schedule['ends_at']);
                     $q->where('starts_at', '<', $endsAt)
-                      ->where('ends_at', '>', $startsAt);
+                        ->where('ends_at', '>', $startsAt);
                 });
 
             // Exclude schedules that will be replaced
@@ -160,8 +157,8 @@ class BulkUpdateSchedules
                             $schedule['ends_at'],
                             substr($overlapping->starts_at, 0, 5),
                             substr($overlapping->ends_at, 0, 5)
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -194,8 +191,8 @@ class BulkUpdateSchedules
                                     $otherDayName,
                                     $otherSlot['starts_at'],
                                     $otherSlot['ends_at']
-                                )
-                            ]
+                                ),
+                            ],
                         ]);
                     }
                 }
@@ -205,9 +202,6 @@ class BulkUpdateSchedules
 
     /**
      * Normalize time from HH:MM to HH:MM:SS format
-     *
-     * @param string $time
-     * @return string
      */
     protected function normalizeTime(string $time): string
     {
@@ -217,6 +211,6 @@ class BulkUpdateSchedules
         }
 
         // Convert HH:MM to HH:MM:SS
-        return $time . ':00';
+        return $time.':00';
     }
 }

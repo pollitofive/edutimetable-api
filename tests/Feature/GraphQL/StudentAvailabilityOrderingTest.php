@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
 use App\Models\Student;
 use App\Models\StudentAvailability;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -158,7 +158,7 @@ it('maintains ordering when filtering by student_id', function () {
 
     $query = '
         query {
-            studentAvailabilities(student_id: ' . $studentAlice->id . ', first: 10) {
+            studentAvailabilities(student_id: '.$studentAlice->id.', first: 10) {
                 data {
                     student {
                         name

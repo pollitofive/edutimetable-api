@@ -34,6 +34,7 @@ class BackfillScheduleGroupIds extends Command
 
         if ($schedulesWithoutGroupId->isEmpty()) {
             $this->info('No schedules found without group_id. Nothing to backfill.');
+
             return 0;
         }
 
@@ -41,7 +42,7 @@ class BackfillScheduleGroupIds extends Command
 
         // Group schedules by course_id and description
         $grouped = $schedulesWithoutGroupId->groupBy(function ($schedule) {
-            return $schedule->course_id . '|' . $schedule->description;
+            return $schedule->course_id.'|'.$schedule->description;
         });
 
         $this->info("Grouped into {$grouped->count()} unique groups.");

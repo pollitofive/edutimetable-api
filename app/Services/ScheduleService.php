@@ -11,9 +11,7 @@ use Illuminate\Validation\ValidationException;
 class ScheduleService
 {
     /**
-     * @param int   $courseId
-     * @param int   $teacherId
-     * @param array $data ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
+     * @param  array  $data  ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
      */
     public function createSchedule(int $courseId, int $teacherId, array $data): Schedule
     {
@@ -21,12 +19,12 @@ class ScheduleService
         $v = Validator::make(
             ['course_id' => $courseId, 'teacher_id' => $teacherId] + $data,
             [
-                'course_id'   => ['required','integer','exists:courses,id'],
-                'teacher_id'  => ['required','integer','exists:teachers,id'],
-                'day_of_week' => ['required','integer','between:0,6'],
-                'starts_at'   => ['required','date_format:H:i'],
-                'ends_at'     => ['required','date_format:H:i'],
-                'description' => ['nullable','string'],
+                'course_id' => ['required', 'integer', 'exists:courses,id'],
+                'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
+                'day_of_week' => ['required', 'integer', 'between:0,6'],
+                'starts_at' => ['required', 'date_format:H:i'],
+                'ends_at' => ['required', 'date_format:H:i'],
+                'description' => ['nullable', 'string'],
             ]
         );
 
@@ -35,7 +33,7 @@ class ScheduleService
         }
 
         $start = Carbon::createFromFormat('H:i', $data['starts_at']);
-        $end   = Carbon::createFromFormat('H:i', $data['ends_at']);
+        $end = Carbon::createFromFormat('H:i', $data['ends_at']);
 
         if (! $start->lt($end)) {
             throw ValidationException::withMessages(['time' => 'starts_at must be before ends_at']);
@@ -51,7 +49,7 @@ class ScheduleService
                 // NOT (end <= existing_start OR start >= existing_end)
                 // => overlaps when (start < existing_end) AND (end > existing_start)
                 $q->where('starts_at', '<', $end->format('H:i:00'))
-                    ->where('ends_at',   '>', $start->format('H:i:00'));
+                    ->where('ends_at', '>', $start->format('H:i:00'));
             })
             ->exists();
 
@@ -61,19 +59,18 @@ class ScheduleService
 
         // 3) Create with new group_id
         return Schedule::create([
-            'course_id'   => $courseId,
-            'teacher_id'  => $teacherId,
+            'course_id' => $courseId,
+            'teacher_id' => $teacherId,
             'day_of_week' => $data['day_of_week'],
-            'starts_at'   => $start->format('H:i:00'),
-            'ends_at'     => $end->format('H:i:00'),
+            'starts_at' => $start->format('H:i:00'),
+            'ends_at' => $end->format('H:i:00'),
             'description' => $data['description'] ?? null,
-            'group_id'    => (string) Str::uuid(),
+            'group_id' => (string) Str::uuid(),
         ]);
     }
 
     /**
-     * @param int   $scheduleId
-     * @param array $data ['course_id' => int, 'teacher_id' => int, 'day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
+     * @param  array  $data  ['course_id' => int, 'teacher_id' => int, 'day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
      */
     public function updateSchedule(int $scheduleId, array $data): Schedule
     {
@@ -93,12 +90,12 @@ class ScheduleService
         $v = Validator::make(
             $mergedData + ['description' => $data['description'] ?? null],
             [
-                'course_id'   => ['required','integer','exists:courses,id'],
-                'teacher_id'  => ['required','integer','exists:teachers,id'],
-                'day_of_week' => ['required','integer','between:0,6'],
-                'starts_at'   => ['required','date_format:H:i'],
-                'ends_at'     => ['required','date_format:H:i'],
-                'description' => ['nullable','string'],
+                'course_id' => ['required', 'integer', 'exists:courses,id'],
+                'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
+                'day_of_week' => ['required', 'integer', 'between:0,6'],
+                'starts_at' => ['required', 'date_format:H:i'],
+                'ends_at' => ['required', 'date_format:H:i'],
+                'description' => ['nullable', 'string'],
             ]
         );
 
@@ -107,7 +104,7 @@ class ScheduleService
         }
 
         $start = Carbon::createFromFormat('H:i', $mergedData['starts_at']);
-        $end   = Carbon::createFromFormat('H:i', $mergedData['ends_at']);
+        $end = Carbon::createFromFormat('H:i', $mergedData['ends_at']);
 
         if (! $start->lt($end)) {
             throw ValidationException::withMessages(['time' => 'starts_at must be before ends_at']);
@@ -122,7 +119,7 @@ class ScheduleService
             ->where('day_of_week', $mergedData['day_of_week'])
             ->where(function ($q) use ($start, $end) {
                 $q->where('starts_at', '<', $end->format('H:i:00'))
-                    ->where('ends_at',   '>', $start->format('H:i:00'));
+                    ->where('ends_at', '>', $start->format('H:i:00'));
             })
             ->exists();
 
@@ -132,11 +129,11 @@ class ScheduleService
 
         // 3) Update
         $updateData = [
-            'course_id'   => $mergedData['course_id'],
-            'teacher_id'  => $mergedData['teacher_id'],
+            'course_id' => $mergedData['course_id'],
+            'teacher_id' => $mergedData['teacher_id'],
             'day_of_week' => $mergedData['day_of_week'],
-            'starts_at'   => $start->format('H:i:00'),
-            'ends_at'     => $end->format('H:i:00'),
+            'starts_at' => $start->format('H:i:00'),
+            'ends_at' => $end->format('H:i:00'),
         ];
 
         // Only update description if it's explicitly provided in the input

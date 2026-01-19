@@ -12,12 +12,7 @@ trait ValidatesAvailabilityOverlaps
      * Two time slots overlap if:
      * (start_time_1 < end_time_2) AND (end_time_1 > start_time_2)
      *
-     * @param int $studentId
-     * @param int $dayOfWeek
-     * @param string $startTime
-     * @param string $endTime
-     * @param int|null $excludeId ID to exclude from check (for updates)
-     * @return bool
+     * @param  int|null  $excludeId  ID to exclude from check (for updates)
      */
     protected function hasOverlapWithDatabase(
         int $studentId,
@@ -32,7 +27,7 @@ trait ValidatesAvailabilityOverlaps
                 // Overlap condition: new slot overlaps if it starts before existing ends
                 // AND ends after existing starts
                 $q->where('start_time', '<', $endTime)
-                  ->where('end_time', '>', $startTime);
+                    ->where('end_time', '>', $startTime);
             });
 
         if ($excludeId) {
@@ -44,14 +39,6 @@ trait ValidatesAvailabilityOverlaps
 
     /**
      * Check if two time slots overlap with each other
-     *
-     * @param int $dayOfWeek1
-     * @param string $startTime1
-     * @param string $endTime1
-     * @param int $dayOfWeek2
-     * @param string $startTime2
-     * @param string $endTime2
-     * @return bool
      */
     protected function slotsOverlap(
         int $dayOfWeek1,
@@ -72,9 +59,6 @@ trait ValidatesAvailabilityOverlaps
 
     /**
      * Get a human-readable day name
-     *
-     * @param int $dayOfWeek
-     * @return string
      */
     protected function getDayName(int $dayOfWeek): string
     {
@@ -93,13 +77,6 @@ trait ValidatesAvailabilityOverlaps
 
     /**
      * Find the overlapping availability from database
-     *
-     * @param int $studentId
-     * @param int $dayOfWeek
-     * @param string $startTime
-     * @param string $endTime
-     * @param int|null $excludeId
-     * @return StudentAvailability|null
      */
     protected function findOverlappingAvailability(
         int $studentId,
@@ -112,7 +89,7 @@ trait ValidatesAvailabilityOverlaps
             ->where('day_of_week', $dayOfWeek)
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->where('start_time', '<', $endTime)
-                  ->where('end_time', '>', $startTime);
+                    ->where('end_time', '>', $startTime);
             });
 
         if ($excludeId) {

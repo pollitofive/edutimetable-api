@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Course;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -17,11 +17,11 @@ beforeEach(function () {
 });
 
 it('can create a course via GraphQL', function () {
-    $mutation = "
+    $mutation = '
         mutation {
             createCourse(input: {
-                name: \"Mathematics 101\"
-                level: \"Beginner\"
+                name: "Mathematics 101"
+                level: "Beginner"
                 year: 2024
             }) {
                 id
@@ -30,7 +30,7 @@ it('can create a course via GraphQL', function () {
                 year
             }
         }
-    ";
+    ';
 
     $response = $this->postGraphQL(['query' => $mutation]);
 
@@ -40,8 +40,8 @@ it('can create a course via GraphQL', function () {
                 'name' => 'Mathematics 101',
                 'level' => 'Beginner',
                 'year' => 2024,
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Course::count())->toBe(1);
@@ -53,7 +53,7 @@ it('can query courses via GraphQL', function () {
     // Create courses (courses don't have teacher_id anymore)
     Course::factory()->count(3)->create();
 
-    $query = "
+    $query = '
         query {
             courses {
                 data {
@@ -64,7 +64,7 @@ it('can query courses via GraphQL', function () {
                 }
             }
         }
-    ";
+    ';
 
     $response = $this->postGraphQL(['query' => $query]);
 
@@ -95,8 +95,8 @@ it('can update a course via GraphQL', function () {
             'updateCourse' => [
                 'name' => 'Advanced Mathematics',
                 'level' => 'Advanced',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     $course->refresh();
@@ -123,8 +123,8 @@ it('can delete a course via GraphQL', function () {
             'deleteCourse' => [
                 'id' => (string) $course->id,
                 'name' => $course->name,
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Course::count())->toBe(0);

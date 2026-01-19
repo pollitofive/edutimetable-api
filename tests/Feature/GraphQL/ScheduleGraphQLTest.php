@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -53,9 +53,9 @@ it('can create a schedule via GraphQL', function () {
                 'course' => [
                     'id' => (string) $this->course->id,
                     'name' => $this->course->name,
-                ]
-            ]
-        ]
+                ],
+            ],
+        ],
     ]);
 
     expect(Schedule::count())->toBe(1);
@@ -92,9 +92,9 @@ it('prevents overlapping schedules for same course and day', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'Teacher already has a schedule at this time on this day'
-            ]
-        ]
+                'message' => 'Teacher already has a schedule at this time on this day',
+            ],
+        ],
     ]);
 
     expect(Schedule::count())->toBe(1);
@@ -135,8 +135,8 @@ it('allows non-overlapping schedules for same course and day', function () {
             'createSchedule' => [
                 'starts_at' => '11:00:00',
                 'ends_at' => '12:00:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Schedule::count())->toBe(2);
@@ -184,15 +184,15 @@ it('can query schedules by day of week via GraphQL', function () {
     Schedule::factory()->create([
         'course_id' => $this->course->id,
         'teacher_id' => $this->teacher->id,
-        'day_of_week' => 1
+        'day_of_week' => 1,
     ]);
     Schedule::factory()->create([
         'course_id' => $this->course->id,
         'teacher_id' => $this->teacher->id,
-        'day_of_week' => 2
+        'day_of_week' => 2,
     ]);
 
-    $query = "
+    $query = '
         query {
             schedules(day_of_week: 1) {
                 data {
@@ -201,7 +201,7 @@ it('can query schedules by day of week via GraphQL', function () {
                 }
             }
         }
-    ";
+    ';
 
     $response = $this->postGraphQL(['query' => $query]);
 
@@ -235,8 +235,8 @@ it('can update a schedule via GraphQL', function () {
             'updateSchedule' => [
                 'starts_at' => '10:00:00',
                 'ends_at' => '11:00:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     $schedule->refresh();
@@ -268,8 +268,8 @@ it('can delete a schedule via GraphQL', function () {
             'deleteSchedule' => [
                 'id' => (string) $schedule->id,
                 'day_of_week' => $schedule->day_of_week,
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(Schedule::count())->toBe(0);
@@ -352,8 +352,8 @@ it('allows updating schedule to non-overlapping time', function () {
             'updateSchedule' => [
                 'starts_at' => '13:00:00',
                 'ends_at' => '14:00:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -387,8 +387,8 @@ it('allows schedule to overlap with itself when updating', function () {
             'updateSchedule' => [
                 'starts_at' => '09:15:00',
                 'ends_at' => '10:15:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -434,9 +434,9 @@ it('validates start time before end time on create', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'starts_at must be before ends_at'
-            ]
-        ]
+                'message' => 'starts_at must be before ends_at',
+            ],
+        ],
     ]);
 });
 
@@ -508,8 +508,8 @@ it('allows updating to different day of week', function () {
         'data' => [
             'updateSchedule' => [
                 'day_of_week' => 2,
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -546,8 +546,8 @@ it('allows updating to different course', function () {
                 'course_id' => (string) $course2->id,
                 'course' => [
                     'id' => (string) $course2->id,
-                ]
-            ]
-        ]
+                ],
+            ],
+        ],
     ]);
 });

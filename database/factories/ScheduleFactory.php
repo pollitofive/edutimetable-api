@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Course;
-use App\Models\Teacher;
 use App\Models\Schedule;
+use App\Models\Teacher;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -29,11 +29,11 @@ class ScheduleFactory extends Factory
         $end = $start + 2; // 2h duration
 
         return [
-            'course_id'   => Course::factory(),
-            'teacher_id'  => Teacher::factory(),
+            'course_id' => Course::factory(),
+            'teacher_id' => Teacher::factory(),
             'day_of_week' => $dayOfWeek,
-            'starts_at'   => sprintf('%02d:00:00', $start),
-            'ends_at'     => sprintf('%02d:00:00', $end),
+            'starts_at' => sprintf('%02d:00:00', $start),
+            'ends_at' => sprintf('%02d:00:00', $end),
             'description' => fake()->sentence(),
         ];
     }

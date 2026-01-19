@@ -14,8 +14,8 @@ class UpdateStudentAvailability
      * Update a student availability with overlap validation
      *
      * @param  null  $_
-     * @param  array  $args
      * @return StudentAvailability
+     *
      * @throws ValidationException
      */
     public function __invoke($_, array $args)
@@ -32,7 +32,7 @@ class UpdateStudentAvailability
         // Validate time constraint
         if ($startTime >= $endTime) {
             throw ValidationException::withMessages([
-                'end_time' => ['End time must be after start time.']
+                'end_time' => ['End time must be after start time.'],
             ]);
         }
 
@@ -54,8 +54,8 @@ class UpdateStudentAvailability
                         $dayName,
                         substr($overlapping->start_time, 0, 5),
                         substr($overlapping->end_time, 0, 5)
-                    )
-                ]
+                    ),
+                ],
             ]);
         }
 

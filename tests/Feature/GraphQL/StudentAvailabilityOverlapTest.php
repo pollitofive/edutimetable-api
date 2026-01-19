@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\User;
 use App\Models\Student;
 use App\Models\StudentAvailability;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -33,7 +33,7 @@ describe('Single Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "11:00"
                     end_time: "14:00"
@@ -61,7 +61,7 @@ describe('Single Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "12:00"
                     end_time: "14:00"
@@ -96,7 +96,7 @@ describe('Single Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "13:00"
                     end_time: "15:00"
@@ -131,7 +131,7 @@ describe('Single Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 2
                     start_time: "09:00"
                     end_time: "12:00"
@@ -173,7 +173,7 @@ describe('Single Update Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 updateStudentAvailability(
-                    id: "' . $availability2->id . '"
+                    id: "'.$availability2->id.'"
                     input: {
                         start_time: "11:00"
                         end_time: "15:00"
@@ -199,7 +199,7 @@ describe('Single Update Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 updateStudentAvailability(
-                    id: "' . $availability->id . '"
+                    id: "'.$availability->id.'"
                     input: {
                         start_time: "10:00"
                         end_time: "13:00"
@@ -237,7 +237,7 @@ describe('Bulk Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkCreateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "11:00", end_time: "14:00" }
                         { day_of_week: 2, start_time: "09:00", end_time: "12:00" }
@@ -256,7 +256,7 @@ describe('Bulk Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkCreateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "09:00", end_time: "12:00" }
                         { day_of_week: 1, start_time: "11:00", end_time: "14:00" }
@@ -275,7 +275,7 @@ describe('Bulk Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkCreateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "09:00", end_time: "12:00" }
                         { day_of_week: 1, start_time: "13:00", end_time: "15:00" }
@@ -297,7 +297,7 @@ describe('Bulk Create Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkCreateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "09:00", end_time: "12:00" }
                         { day_of_week: 1, start_time: "12:00", end_time: "15:00" }
@@ -322,7 +322,7 @@ describe('Bulk Update Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkUpdateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "09:00", end_time: "12:00" }
                         { day_of_week: 1, start_time: "11:00", end_time: "14:00" }
@@ -346,7 +346,7 @@ describe('Bulk Update Overlap Validation', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 bulkUpdateStudentAvailabilities(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     availabilities: [
                         { day_of_week: 1, start_time: "09:00", end_time: "12:00" }
                         { day_of_week: 1, start_time: "13:00", end_time: "15:00" }
@@ -380,7 +380,7 @@ describe('Edge Cases', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "09:00"
                     end_time: "12:00"
@@ -405,7 +405,7 @@ describe('Edge Cases', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "11:00"
                     end_time: "13:00"
@@ -430,7 +430,7 @@ describe('Edge Cases', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $this->student->id . '
+                    student_id: '.$this->student->id.'
                     day_of_week: 1
                     start_time: "09:00"
                     end_time: "15:00"
@@ -458,7 +458,7 @@ describe('Edge Cases', function () {
         $response = ($this->execGraphQL)('
             mutation {
                 createStudentAvailability(input: {
-                    student_id: ' . $otherStudent->id . '
+                    student_id: '.$otherStudent->id.'
                     day_of_week: 1
                     start_time: "09:00"
                     end_time: "12:00"

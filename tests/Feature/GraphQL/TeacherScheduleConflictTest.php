@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Nuwave\Lighthouse\Testing\MakesGraphQLRequests;
@@ -56,9 +56,9 @@ describe('Teacher-Based Validation (New Architecture)', function () {
         $response->assertJson([
             'errors' => [
                 [
-                    'message' => 'Teacher already has a schedule at this time on this day'
-                ]
-            ]
+                    'message' => 'Teacher already has a schedule at this time on this day',
+                ],
+            ],
         ]);
 
         // Verify only one schedule exists
@@ -100,8 +100,8 @@ describe('Teacher-Based Validation (New Architecture)', function () {
                 'createSchedule' => [
                     'course_id' => (string) $this->course1->id,
                     'teacher_id' => (string) $this->teacher2->id,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify both schedules exist
@@ -142,8 +142,8 @@ describe('Teacher-Based Validation (New Architecture)', function () {
             'data' => [
                 'createSchedule' => [
                     'teacher_id' => (string) $this->teacher1->id,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         expect(Schedule::count())->toBe(2);
@@ -196,10 +196,10 @@ describe('Bulk Operations with Teacher Validation', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course1->id . '
+                    course_id: '.$this->course1->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -217,10 +217,10 @@ describe('Bulk Operations with Teacher Validation', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course1->id . '
+                    course_id: '.$this->course1->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher2->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher2->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -238,7 +238,7 @@ describe('Bulk Operations with Teacher Validation', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course1->id . '
+                    course_id: '.$this->course1->id.'
                     schedules: [
                         { day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
@@ -269,9 +269,9 @@ describe('Bulk Operations with Teacher Validation', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course2->id . '
+                    course_id: '.$this->course2->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -311,8 +311,8 @@ describe('Update Operations with Teacher Validation', function () {
             'data' => [
                 'updateSchedule' => [
                     'teacher_id' => (string) $this->teacher2->id,
-                ]
-            ]
+                ],
+            ],
         ]);
     });
 
@@ -351,9 +351,9 @@ describe('Update Operations with Teacher Validation', function () {
         $response->assertJson([
             'errors' => [
                 [
-                    'message' => 'Teacher already has a schedule at this time on this day'
-                ]
-            ]
+                    'message' => 'Teacher already has a schedule at this time on this day',
+                ],
+            ],
         ]);
     });
 });
@@ -375,10 +375,10 @@ describe('Bulk Update Operations with Teacher Validation', function () {
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    course_id: ' . $this->course2->id . '
+                    course_id: '.$this->course2->id.'
                     description: "New course schedule"
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -407,10 +407,10 @@ describe('Bulk Update Operations with Teacher Validation', function () {
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    course_id: ' . $this->course1->id . '
+                    course_id: '.$this->course1->id.'
                     description: "Updated description"
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -423,8 +423,8 @@ describe('Bulk Update Operations with Teacher Validation', function () {
             'data' => [
                 'bulkUpdateSchedules' => [
                     ['description' => 'Updated description'],
-                ]
-            ]
+                ],
+            ],
         ]);
     });
 
@@ -443,10 +443,10 @@ describe('Bulk Update Operations with Teacher Validation', function () {
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    course_id: ' . $this->course2->id . '
+                    course_id: '.$this->course2->id.'
                     description: "Course 2 schedule"
                     schedules: [
-                        { teacher_id: ' . $this->teacher1->id . ', day_of_week: 2, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher1->id.', day_of_week: 2, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -465,8 +465,8 @@ describe('Bulk Update Operations with Teacher Validation', function () {
                         'starts_at' => '14:00:00',
                         'ends_at' => '16:00:00',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
     });
 });

@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Teacher extends Model
 {
@@ -35,7 +35,7 @@ class Teacher extends Model
             'teacher_id',     // foreign key on pivot
             'course_id'       // related key on pivot
         )
-        ->distinct()         // avoid duplicate courses
-        ->withTimestamps();  // include schedule timestamps
+            ->distinct()         // avoid duplicate courses
+            ->withTimestamps();  // include schedule timestamps
     }
 }

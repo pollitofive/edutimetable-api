@@ -15,12 +15,7 @@ trait ValidatesScheduleOverlaps
      * CHANGED: Now checks for TEACHER overlap instead of COURSE overlap
      * This prevents the same teacher from teaching multiple courses at the same time
      *
-     * @param int $teacherId
-     * @param int $dayOfWeek
-     * @param string $startsAt
-     * @param string $endsAt
-     * @param int|null $excludeId ID to exclude from check (for updates)
-     * @return bool
+     * @param  int|null  $excludeId  ID to exclude from check (for updates)
      */
     protected function hasOverlapWithDatabase(
         int $teacherId,
@@ -35,7 +30,7 @@ trait ValidatesScheduleOverlaps
                 // Overlap condition: new slot overlaps if it starts before existing ends
                 // AND ends after existing starts
                 $q->where('starts_at', '<', $endsAt)
-                  ->where('ends_at', '>', $startsAt);
+                    ->where('ends_at', '>', $startsAt);
             });
 
         if ($excludeId) {
@@ -47,14 +42,6 @@ trait ValidatesScheduleOverlaps
 
     /**
      * Check if two schedule time slots overlap with each other
-     *
-     * @param int $dayOfWeek1
-     * @param string $startsAt1
-     * @param string $endsAt1
-     * @param int $dayOfWeek2
-     * @param string $startsAt2
-     * @param string $endsAt2
-     * @return bool
      */
     protected function slotsOverlap(
         int $dayOfWeek1,
@@ -75,9 +62,6 @@ trait ValidatesScheduleOverlaps
 
     /**
      * Get a human-readable day name
-     *
-     * @param int $dayOfWeek
-     * @return string
      */
     protected function getDayName(int $dayOfWeek): string
     {
@@ -98,13 +82,6 @@ trait ValidatesScheduleOverlaps
      * Find the overlapping schedule from database
      *
      * CHANGED: Now checks for TEACHER overlap instead of COURSE overlap
-     *
-     * @param int $teacherId
-     * @param int $dayOfWeek
-     * @param string $startsAt
-     * @param string $endsAt
-     * @param int|null $excludeId
-     * @return Schedule|null
      */
     protected function findOverlappingSchedule(
         int $teacherId,
@@ -117,7 +94,7 @@ trait ValidatesScheduleOverlaps
             ->where('day_of_week', $dayOfWeek)
             ->where(function ($q) use ($startsAt, $endsAt) {
                 $q->where('starts_at', '<', $endsAt)
-                  ->where('ends_at', '>', $startsAt);
+                    ->where('ends_at', '>', $startsAt);
             });
 
         if ($excludeId) {

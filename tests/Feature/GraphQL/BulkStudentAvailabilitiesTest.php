@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
 use App\Models\Student;
 use App\Models\StudentAvailability;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -23,7 +23,7 @@ it('can bulk create multiple student availabilities via GraphQL', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
                     { day_of_week: 0, start_time: "14:00", end_time: "17:00" }
@@ -65,7 +65,7 @@ it('fails bulk create with empty availabilities array', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: []
             }) {
                 id
@@ -103,7 +103,7 @@ it('fails bulk create with invalid day_of_week', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 7, start_time: "09:00", end_time: "12:00" }
                 ]
@@ -124,7 +124,7 @@ it('fails bulk create with invalid time format', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "9:00", end_time: "12:00" }
                 ]
@@ -145,7 +145,7 @@ it('fails bulk create when end_time is before start_time', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "12:00", end_time: "09:00" }
                 ]
@@ -166,7 +166,7 @@ it('fails bulk create when end_time equals start_time', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "12:00", end_time: "12:00" }
                 ]
@@ -195,7 +195,7 @@ it('fails bulk create with duplicate slots in database', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
                 ]
@@ -216,7 +216,7 @@ it('rolls back bulk create on validation failure', function () {
     $mutation = '
         mutation {
             bulkCreateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
                     { day_of_week: 1, start_time: "14:00", end_time: "10:00" }
@@ -248,7 +248,7 @@ it('can bulk update student availabilities replacing all existing ones', functio
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 1, start_time: "08:00", end_time: "11:00" }
                     { day_of_week: 3, start_time: "13:00", end_time: "18:00" }
@@ -305,7 +305,7 @@ it('fails bulk update with empty availabilities array', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: []
             }) {
                 id
@@ -324,7 +324,7 @@ it('fails bulk update with invalid day_of_week', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: -1, start_time: "09:00", end_time: "12:00" }
                 ]
@@ -345,7 +345,7 @@ it('fails bulk update with invalid time format', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "25:00", end_time: "12:00" }
                 ]
@@ -366,7 +366,7 @@ it('fails bulk update when end_time is before start_time', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "18:00", end_time: "09:00" }
                 ]
@@ -394,7 +394,7 @@ it('rolls back bulk update on validation failure', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
                     { day_of_week: 1, start_time: "18:00", end_time: "10:00" }
@@ -432,7 +432,7 @@ it('can bulk update to completely replace availabilities with different schedule
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 5, start_time: "10:00", end_time: "18:00" }
                     { day_of_week: 6, start_time: "10:00", end_time: "18:00" }
@@ -462,7 +462,7 @@ it('validates duplicate slots in bulk update input', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
                     { day_of_week: 0, start_time: "09:00", end_time: "12:00" }
@@ -489,7 +489,7 @@ it('can handle bulk update with single availability', function () {
     $mutation = '
         mutation {
             bulkUpdateStudentAvailabilities(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 availabilities: [
                     { day_of_week: 0, start_time: "09:00", end_time: "17:00" }
                 ]

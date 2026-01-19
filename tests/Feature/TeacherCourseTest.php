@@ -2,11 +2,9 @@
 
 namespace Tests\Feature;
 
-
 use App\Models\Course;
 use App\Models\Teacher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Database\QueryException;
 
 uses(RefreshDatabase::class);
 

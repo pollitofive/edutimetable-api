@@ -21,6 +21,7 @@ class CreateStudentAvailabilityInputValidator
                         'end_time',
                         'End time must be after start time.'
                     );
+
                     return; // Don't check overlaps if times are invalid
                 }
             }

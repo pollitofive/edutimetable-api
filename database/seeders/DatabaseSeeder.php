@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\StudentAvailability;
-use App\Models\User;
-use App\Models\Teacher;
-use App\Models\Student;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Student;
+use App\Models\StudentAvailability;
+use App\Models\Teacher;
+use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'admin@example.com',
-            'password' => Hash::make('password')
+            'password' => Hash::make('password'),
         ]);
 
         // Create teachers FIRST

@@ -10,6 +10,8 @@ type Query {
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where, group_id: String @where): [Schedule!]! @paginate(defaultCount: 20)
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
+  studentEnrollments(student_id: ID @where, schedule_id: ID @where, status: StudentEnrollmentStatus @where): [StudentEnrollment!]! @paginate(defaultCount: 20) @orderBy(column: "created_at", direction: DESC)
+  studentEnrollment(id: ID! @eq): StudentEnrollment @find
 }
 
 """ Root mutation """
@@ -46,6 +48,12 @@ type Mutation {
       @field(resolver: "App\\GraphQL\\Mutations\\BulkCreateSchedules@__invoke")
     bulkUpdateSchedules(input: BulkUpdateSchedulesInput! @spread): [Schedule!]! @guard
       @field(resolver: "App\\GraphQL\\Mutations\\BulkUpdateSchedules@__invoke")
+
+    createStudentEnrollment(input: CreateStudentEnrollmentInput! @spread): StudentEnrollment @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateStudentEnrollment@__invoke")
+    updateStudentEnrollment(id: ID!, input: UpdateStudentEnrollmentInput! @spread): StudentEnrollment @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateStudentEnrollment@__invoke")
+    deleteStudentEnrollment(id: ID! @eq(key: "id")): StudentEnrollment @guard @delete(globalId: true)
 }
 
 """ Eloquent models """
@@ -82,6 +90,8 @@ type Student @model(class: "App\\Models\\Student") {
   email: String!
   code: String!
   availabilities: [StudentAvailability!]! @hasMany
+  enrollments: [StudentEnrollment!]! @hasMany
+  schedules: [Schedule!]! @belongsToMany(relation: "schedules")
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -108,8 +118,30 @@ type Schedule @model(class: "App\\Models\\Schedule") {
   ends_at: String!
   description: String!
   group_id: String
+  enrollments: [StudentEnrollment!]! @hasMany
+  students: [Student!]! @belongsToMany(relation: "students")
   created_at: DateTime!
   updated_at: DateTime!
+}
+
+type StudentEnrollment @model(class: "App\\Models\\StudentEnrollment") {
+  id: ID!
+  student_id: ID!
+  schedule_id: ID!
+  student: Student! @belongsTo
+  schedule: Schedule! @belongsTo
+  enrolled_at: DateTime!
+  status: StudentEnrollmentStatus!
+  notes: String
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+enum StudentEnrollmentStatus {
+  ACTIVE @enum(value: "active")
+  COMPLETED @enum(value: "completed")
+  DROPPED @enum(value: "dropped")
+  PENDING @enum(value: "pending")
 }
 
 """ Inputs """
@@ -214,4 +246,20 @@ input BulkUpdateSchedulesInput {
   description: String!
   group_id: String
   schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
+}
+
+input CreateStudentEnrollmentInput {
+  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  schedule_id: ID! @rules(apply: ["required", "exists:schedules,id"])
+  enrolled_at: DateTime
+  status: StudentEnrollmentStatus
+  notes: String
+}
+
+input UpdateStudentEnrollmentInput {
+  student_id: ID @rules(apply: ["exists:students,id"])
+  schedule_id: ID @rules(apply: ["exists:schedules,id"])
+  enrolled_at: DateTime
+  status: StudentEnrollmentStatus
+  notes: String
 }

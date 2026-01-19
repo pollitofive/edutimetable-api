@@ -33,9 +33,9 @@ return new class extends Migration
 
         if ($orphanedSchedules > 0) {
             throw new \Exception(
-                "Migration failed: {$orphanedSchedules} schedules still have NULL teacher_id. " .
-                "This likely means some courses have been deleted or have no teacher. " .
-                "Please fix data integrity before proceeding."
+                "Migration failed: {$orphanedSchedules} schedules still have NULL teacher_id. ".
+                'This likely means some courses have been deleted or have no teacher. '.
+                'Please fix data integrity before proceeding.'
             );
         }
     }

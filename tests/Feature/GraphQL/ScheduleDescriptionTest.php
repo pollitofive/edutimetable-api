@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
-use App\Models\Teacher;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -48,8 +48,8 @@ it('returns description field when creating schedule', function () {
                 'starts_at' => '09:00:00',
                 'ends_at' => '10:00:00',
                 'description' => 'Introduction to Laravel',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -76,8 +76,8 @@ it('requires description field', function () {
         'errors' => [
             [
                 'message' => 'Field CreateScheduleInput.description of required type String! was not provided.',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -104,8 +104,8 @@ it('returns description field when updating schedule', function () {
         'data' => [
             'updateSchedule' => [
                 'description' => 'Updated description',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     $schedule->refresh();
@@ -138,10 +138,10 @@ it('returns description field when querying schedules', function () {
                 'data' => [
                     [
                         'description' => 'Test description',
-                    ]
-                ]
-            ]
-        ]
+                    ],
+                ],
+            ],
+        ],
     ]);
 });
 
@@ -167,7 +167,7 @@ it('returns description field when deleting schedule', function () {
         'data' => [
             'deleteSchedule' => [
                 'description' => 'To be deleted',
-            ]
-        ]
+            ],
+        ],
     ]);
 });

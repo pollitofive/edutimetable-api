@@ -5,7 +5,6 @@ namespace App\GraphQL\Validators;
 use App\GraphQL\Validators\Concerns\ValidatesAvailabilityOverlaps;
 use App\Models\StudentAvailability;
 use Illuminate\Validation\Validator;
-use Nuwave\Lighthouse\Execution\Arguments\ArgumentSet;
 
 class UpdateStudentAvailabilityInputValidator
 {
@@ -23,6 +22,7 @@ class UpdateStudentAvailabilityInputValidator
                         'end_time',
                         'End time must be after start time.'
                     );
+
                     return; // Don't check overlaps if times are invalid
                 }
             }
@@ -33,14 +33,14 @@ class UpdateStudentAvailabilityInputValidator
 
             // The 'id' comes from the mutation arguments (not the input)
             // We need to check if we're updating fields that could cause overlaps
-            if (!isset($args['id'])) {
+            if (! isset($args['id'])) {
                 return; // Can't validate without the ID
             }
 
             $availabilityId = (int) $args['id'];
             $availability = StudentAvailability::find($availabilityId);
 
-            if (!$availability) {
+            if (! $availability) {
                 return; // Will be handled by model not found
             }
 

@@ -16,8 +16,8 @@ class BulkUpdateStudentAvailabilities
      * Replace all student availabilities with new ones
      *
      * @param  null  $_
-     * @param  array  $args
      * @return \Illuminate\Support\Collection
+     *
      * @throws ValidationException
      */
     public function __invoke($_, array $args)
@@ -28,7 +28,7 @@ class BulkUpdateStudentAvailabilities
         // Validate at least one availability is provided
         if (empty($availabilities)) {
             throw ValidationException::withMessages([
-                'availabilities' => ['At least one availability slot is required.']
+                'availabilities' => ['At least one availability slot is required.'],
             ]);
         }
 
@@ -66,7 +66,6 @@ class BulkUpdateStudentAvailabilities
     /**
      * Validate that slots don't overlap within the input array
      *
-     * @param array $availabilities
      * @throws ValidationException
      */
     protected function validateInternalOverlaps(array $availabilities): void
@@ -85,8 +84,8 @@ class BulkUpdateStudentAvailabilities
                             $dayName,
                             $availability['start_time'],
                             $availability['end_time']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -116,8 +115,8 @@ class BulkUpdateStudentAvailabilities
                                 $otherDayName,
                                 substr($otherSlot['start_time'], 0, 5),
                                 substr($otherSlot['end_time'], 0, 5)
-                            )
-                        ]
+                            ),
+                        ],
                     ]);
                 }
             }

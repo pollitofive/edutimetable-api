@@ -34,8 +34,8 @@ it('can query me when authenticated', function () {
                 'id' => (string) $user->id,
                 'name' => 'Test User',
                 'email' => 'test@example.com',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 

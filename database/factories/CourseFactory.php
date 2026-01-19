@@ -18,9 +18,9 @@ class CourseFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'  => 'English ' . strtoupper($this->faker->randomLetter()) . ' ' . $this->faker->randomDigit(),
-            'level' => $this->faker->randomElement(['A1','A2','B1','B2','C1','C2']),
-            'year'  => (int) now()->year,
+            'name' => 'English '.strtoupper($this->faker->randomLetter()).' '.$this->faker->randomDigit(),
+            'level' => $this->faker->randomElement(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
+            'year' => (int) now()->year,
             // teacher_id REMOVED - teachers are now assigned via schedules
         ];
     }

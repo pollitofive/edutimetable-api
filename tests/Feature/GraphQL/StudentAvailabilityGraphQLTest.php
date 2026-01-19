@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
 use App\Models\Student;
 use App\Models\StudentAvailability;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -21,7 +21,7 @@ it('can create a student availability via GraphQL', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 0
                 start_time: "09:00"
                 end_time: "12:00"
@@ -44,8 +44,8 @@ it('can create a student availability via GraphQL', function () {
                 'day_of_week' => 0,
                 'start_time' => '09:00',
                 'end_time' => '12:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(StudentAvailability::count())->toBe(1);
@@ -67,7 +67,7 @@ it('can update a student availability via GraphQL', function () {
 
     $mutation = '
         mutation {
-            updateStudentAvailability(id: ' . $availability->id . ', input: {
+            updateStudentAvailability(id: '.$availability->id.', input: {
                 start_time: "10:00"
                 end_time: "14:00"
             }) {
@@ -86,8 +86,8 @@ it('can update a student availability via GraphQL', function () {
                 'id' => (string) $availability->id,
                 'start_time' => '10:00',
                 'end_time' => '14:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 
     $availability->refresh();
@@ -105,7 +105,7 @@ it('can delete a student availability via GraphQL', function () {
 
     $mutation = '
         mutation {
-            deleteStudentAvailability(id: ' . $availability->id . ') {
+            deleteStudentAvailability(id: '.$availability->id.') {
                 id
             }
         }
@@ -117,8 +117,8 @@ it('can delete a student availability via GraphQL', function () {
         'data' => [
             'deleteStudentAvailability' => [
                 'id' => (string) $availability->id,
-            ]
-        ]
+            ],
+        ],
     ]);
 
     expect(StudentAvailability::count())->toBe(0);
@@ -132,7 +132,7 @@ it('can query student availabilities via GraphQL', function () {
 
     $query = '
         query {
-            studentAvailabilities(student_id: ' . $student->id . ') {
+            studentAvailabilities(student_id: '.$student->id.') {
                 data {
                     id
                     student_id
@@ -160,7 +160,7 @@ it('can query a single student availability via GraphQL', function () {
 
     $query = '
         query {
-            studentAvailability(id: ' . $availability->id . ') {
+            studentAvailability(id: '.$availability->id.') {
                 id
                 student_id
                 day_of_week
@@ -180,8 +180,8 @@ it('can query a single student availability via GraphQL', function () {
                 'day_of_week' => 2,
                 'start_time' => '14:00',
                 'end_time' => '18:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 });
 
@@ -210,7 +210,7 @@ it('validates day_of_week is between 0 and 6', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 7
                 start_time: "09:00"
                 end_time: "12:00"
@@ -231,7 +231,7 @@ it('validates time format is HH:mm', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 0
                 start_time: "9:00"
                 end_time: "12:00"
@@ -252,7 +252,7 @@ it('validates end_time is after start_time', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 0
                 start_time: "12:00"
                 end_time: "09:00"
@@ -273,7 +273,7 @@ it('validates end_time equals start_time should fail', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 0
                 start_time: "12:00"
                 end_time: "12:00"
@@ -296,7 +296,7 @@ it('can load student relationship from availability', function () {
 
     $query = '
         query {
-            studentAvailability(id: ' . $availability->id . ') {
+            studentAvailability(id: '.$availability->id.') {
                 id
                 student {
                     id
@@ -314,9 +314,9 @@ it('can load student relationship from availability', function () {
                 'student' => [
                     'id' => (string) $student->id,
                     'name' => 'John Doe',
-                ]
-            ]
-        ]
+                ],
+            ],
+        ],
     ]);
 });
 
@@ -361,7 +361,7 @@ it('prevents duplicate availability slots', function () {
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: ' . $student->id . '
+                student_id: '.$student->id.'
                 day_of_week: 0
                 start_time: "09:00"
                 end_time: "12:00"

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Services\ScheduleService;
@@ -19,14 +18,14 @@ it('creates a non-overlapping schedule for a course', function () {
 
     $s1 = $service->createSchedule($course->id, $teacher->id, [
         'day_of_week' => 1,           // Monday
-        'starts_at'   => '15:00',
-        'ends_at'     => '16:30',
+        'starts_at' => '15:00',
+        'ends_at' => '16:30',
     ]);
 
     $s2 = $service->createSchedule($course->id, $teacher->id, [
         'day_of_week' => 1,
-        'starts_at'   => '16:30',     // touches end — allowed
-        'ends_at'     => '18:00',
+        'starts_at' => '16:30',     // touches end — allowed
+        'ends_at' => '18:00',
     ]);
 
     expect(Schedule::count())->toBe(2);
@@ -41,16 +40,15 @@ it('rejects overlapping schedules within the same course and day', function () {
 
     $service->createSchedule($course->id, $teacher->id, [
         'day_of_week' => 3,
-        'starts_at'   => '14:00',
-        'ends_at'     => '15:00',
+        'starts_at' => '14:00',
+        'ends_at' => '15:00',
     ]);
 
     // Overlaps 14:30-15:30 => should fail
-    expect(fn () =>
-    $service->createSchedule($course->id, $teacher->id, [
+    expect(fn () => $service->createSchedule($course->id, $teacher->id, [
         'day_of_week' => 3,
-        'starts_at'   => '14:30',
-        'ends_at'     => '15:30',
+        'starts_at' => '14:30',
+        'ends_at' => '15:30',
     ])
     )->toThrow(ValidationException::class);
 });
@@ -63,15 +61,15 @@ it('allows same time range if it is a different teacher', function () {
 
     $service->createSchedule($course->id, $teacher1->id, [
         'day_of_week' => 2,
-        'starts_at'   => '10:00',
-        'ends_at'     => '11:00',
+        'starts_at' => '10:00',
+        'ends_at' => '11:00',
     ]);
 
     // Same time, same course, different teacher => allowed (teacher-based validation)
     $service->createSchedule($course->id, $teacher2->id, [
         'day_of_week' => 2,
-        'starts_at'   => '10:00',
-        'ends_at'     => '11:00',
+        'starts_at' => '10:00',
+        'ends_at' => '11:00',
     ]);
 
     expect(Schedule::count())->toBe(2);
@@ -82,11 +80,10 @@ it('rejects invalid time ranges (start must be before end)', function () {
     $teacher = \App\Models\Teacher::factory()->create();
     $service = app(ScheduleService::class);
 
-    expect(fn () =>
-    $service->createSchedule($course->id, $teacher->id, [
+    expect(fn () => $service->createSchedule($course->id, $teacher->id, [
         'day_of_week' => 4,
-        'starts_at'   => '18:00',
-        'ends_at'     => '17:00',
+        'starts_at' => '18:00',
+        'ends_at' => '17:00',
     ])
     )->toThrow(ValidationException::class);
 });

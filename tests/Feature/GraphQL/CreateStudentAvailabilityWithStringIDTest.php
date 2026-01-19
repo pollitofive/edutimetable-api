@@ -2,9 +2,8 @@
 
 namespace Tests\Feature\GraphQL;
 
-use App\Models\User;
 use App\Models\Student;
-use App\Models\StudentAvailability;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
@@ -22,7 +21,7 @@ it('can create student availability with string student_id like frontend sends',
     $mutation = '
         mutation {
             createStudentAvailability(input: {
-                student_id: "' . $student->id . '"
+                student_id: "'.$student->id.'"
                 day_of_week: 0
                 start_time: "00:00"
                 end_time: "02:00"
@@ -45,7 +44,7 @@ it('can create student availability with string student_id like frontend sends',
                 'day_of_week' => 0,
                 'start_time' => '00:00',
                 'end_time' => '02:00',
-            ]
-        ]
+            ],
+        ],
     ]);
 });

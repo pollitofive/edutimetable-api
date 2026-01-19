@@ -11,7 +11,7 @@ class AuthController extends Controller
     public function loginToken(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required','email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
@@ -25,13 +25,14 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user'  => $user,
+            'user' => $user,
         ], 201);
     }
 
     public function logoutToken(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['message' => 'ok']);
     }
 

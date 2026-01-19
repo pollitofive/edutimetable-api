@@ -9,9 +9,13 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class NoOverlappingAvailability implements ValidationRule
 {
     protected int $studentId;
+
     protected int $dayOfWeek;
+
     protected string $startTime;
+
     protected string $endTime;
+
     protected ?int $excludeId = null;
 
     public function __construct()
@@ -65,7 +69,7 @@ class NoOverlappingAvailability implements ValidationRule
                 // Overlap condition: new slot overlaps if it starts before existing ends
                 // AND ends after existing starts
                 $q->where('start_time', '<', $this->endTime)
-                  ->where('end_time', '>', $this->startTime);
+                    ->where('end_time', '>', $this->startTime);
             });
 
         if ($this->excludeId) {

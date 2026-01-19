@@ -26,11 +26,11 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 3, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 5, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 5, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -63,8 +63,8 @@ describe('Bulk Create Schedules', function () {
                         'starts_at' => '14:00:00',
                         'ends_at' => '16:00:00',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify schedules were created in database
@@ -76,7 +76,7 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: []
                 }) {
                     id
@@ -94,7 +94,7 @@ describe('Bulk Create Schedules', function () {
                     description: "Test Schedule"
                     course_id: 99999
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -110,9 +110,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 7, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 7, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -128,9 +128,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: -1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: -1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -146,9 +146,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "9:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "9:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -164,9 +164,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00 AM", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00 AM", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -182,9 +182,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "18:00", ends_at: "09:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "18:00", ends_at: "09:00" }
                     ]
                 }) {
                     id
@@ -203,9 +203,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "09:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "09:00" }
                     ]
                 }) {
                     id
@@ -221,10 +221,10 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -240,10 +240,10 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -259,11 +259,11 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 2, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 3, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -290,9 +290,9 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -308,11 +308,11 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "13:00", ends_at: "15:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "13:00", ends_at: "15:00" }
                     ]
                 }) {
                     id
@@ -331,10 +331,10 @@ describe('Bulk Create Schedules', function () {
             mutation {
                 bulkCreateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -364,10 +364,10 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 4, starts_at: "13:00", ends_at: "15:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 4, starts_at: "13:00", ends_at: "15:00" }
                     ]
                 }) {
                     id
@@ -394,8 +394,8 @@ describe('Bulk Update Schedules', function () {
                         'starts_at' => '13:00:00',
                         'ends_at' => '15:00:00',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify only 2 schedules exist now (old ones were deleted)
@@ -413,9 +413,9 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 3, starts_at: "09:00", ends_at: "17:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "09:00", ends_at: "17:00" }
                     ]
                 }) {
                     id
@@ -433,7 +433,7 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: []
                 }) {
                     id
@@ -451,7 +451,7 @@ describe('Bulk Update Schedules', function () {
                     description: "Test Schedule"
                     course_id: 99999
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -467,10 +467,10 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:30", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:30", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -486,9 +486,9 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "15:00", ends_at: "10:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "15:00", ends_at: "10:00" }
                     ]
                 }) {
                     id
@@ -514,9 +514,9 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -535,8 +535,8 @@ describe('Bulk Update Schedules', function () {
                         'starts_at' => '09:00:00',
                         'ends_at' => '11:00:00',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
     });
 
@@ -553,10 +553,10 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -614,9 +614,9 @@ describe('Bulk Update Schedules', function () {
             mutation {
                 bulkUpdateSchedules(input: {
                     description: "Test Schedule"
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     schedules: [
-                        { teacher_id: ' . $teacher1->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$teacher1->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
                     ]
                 }) {
                     id
@@ -638,11 +638,11 @@ describe('Bulk Update Schedules', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Advanced Programming Course"
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "09:00", ends_at: "11:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -656,8 +656,8 @@ describe('Bulk Update Schedules', function () {
                 'bulkCreateSchedules' => [
                     ['description' => 'Advanced Programming Course'],
                     ['description' => 'Advanced Programming Course'],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify all schedules have the description
@@ -678,10 +678,10 @@ describe('Bulk Update Schedules', function () {
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Updated description"
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -694,8 +694,8 @@ describe('Bulk Update Schedules', function () {
             'data' => [
                 'bulkUpdateSchedules' => [
                     ['description' => 'Updated description'],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify schedule has the new description
@@ -713,11 +713,11 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Introduction to Programming - Fall 2026"
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $teacherB->id . ', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherB->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -751,8 +751,8 @@ describe('Option B: Different Teachers Per Slot', function () {
                         'ends_at' => '16:00:00',
                         'description' => 'Introduction to Programming - Fall 2026',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify both schedules were created with the same group_id
@@ -797,12 +797,12 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Updated - Split Teaching"
-                    group_id: "' . $groupId . '"
+                    group_id: "'.$groupId.'"
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $teacherB->id . ', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherB->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -829,8 +829,8 @@ describe('Option B: Different Teachers Per Slot', function () {
                         'description' => 'Updated - Split Teaching',
                         'group_id' => $groupId,
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify the update
@@ -848,11 +848,11 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Introduction to Programming - Sections A & B"
                     schedules: [
-                        { teacher_id: ' . $teacherA->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $teacherB->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherA->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherB->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -873,11 +873,11 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Test Schedule"
                     schedules: [
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $this->teacher->id . ', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
                     ]
                 }) {
                     id
@@ -907,11 +907,11 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "New Group"
                     schedules: [
-                        { teacher_id: ' . $teacherB->id . ', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $teacherA->id . ', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
+                        { teacher_id: '.$teacherB->id.', day_of_week: 2, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherA->id.', day_of_week: 1, starts_at: "11:00", ends_at: "13:00" }
                     ]
                 }) {
                     id
@@ -934,11 +934,11 @@ describe('Option B: Different Teachers Per Slot', function () {
         $response = $this->graphQL('
             mutation {
                 bulkCreateSchedules(input: {
-                    course_id: ' . $this->course->id . '
+                    course_id: '.$this->course->id.'
                     description: "Introduction to Programming - Fall 2026 Section A"
                     schedules: [
-                        { teacher_id: ' . $teacherTheory->id . ', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
-                        { teacher_id: ' . $teacherLab->id . ', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$teacherTheory->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$teacherLab->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
                     ]
                 }) {
                     id
@@ -977,8 +977,8 @@ describe('Option B: Different Teachers Per Slot', function () {
                         'starts_at' => '14:00:00',
                         'ends_at' => '16:00:00',
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         // Verify schedules were created correctly

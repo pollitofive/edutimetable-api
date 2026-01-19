@@ -17,8 +17,8 @@ class BulkCreateSchedules
      * Create multiple schedules in bulk for a course
      *
      * @param  null  $_
-     * @param  array  $args
      * @return \Illuminate\Support\Collection
+     *
      * @throws ValidationException
      */
     public function __invoke($_, array $args)
@@ -30,7 +30,7 @@ class BulkCreateSchedules
         // Validate at least one schedule is provided
         if (empty($schedules)) {
             throw ValidationException::withMessages([
-                'schedules' => ['At least one schedule slot is required.']
+                'schedules' => ['At least one schedule slot is required.'],
             ]);
         }
 
@@ -76,8 +76,6 @@ class BulkCreateSchedules
      *
      * CHANGED: Now validates TEACHER conflicts instead of COURSE conflicts
      *
-     * @param int $courseId
-     * @param array $schedules
      * @throws ValidationException
      */
     protected function validateSchedules(int $courseId, array $schedules): void
@@ -87,7 +85,7 @@ class BulkCreateSchedules
             $dayName = $this->getDayName((int) $schedule['day_of_week']);
 
             // Validate teacher_id is present
-            if (!isset($schedule['teacher_id'])) {
+            if (! isset($schedule['teacher_id'])) {
                 throw ValidationException::withMessages([
                     'schedules' => [
                         sprintf(
@@ -96,8 +94,8 @@ class BulkCreateSchedules
                             $dayName,
                             $schedule['starts_at'],
                             $schedule['ends_at']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -111,8 +109,8 @@ class BulkCreateSchedules
                             $dayName,
                             $schedule['starts_at'],
                             $schedule['ends_at']
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -135,8 +133,8 @@ class BulkCreateSchedules
                             $schedule['ends_at'],
                             substr($overlapping->starts_at, 0, 5),
                             substr($overlapping->ends_at, 0, 5)
-                        )
-                    ]
+                        ),
+                    ],
                 ]);
             }
 
@@ -169,8 +167,8 @@ class BulkCreateSchedules
                                     $otherDayName,
                                     $otherSlot['starts_at'],
                                     $otherSlot['ends_at']
-                                )
-                            ]
+                                ),
+                            ],
                         ]);
                     }
                 }
@@ -180,9 +178,6 @@ class BulkCreateSchedules
 
     /**
      * Normalize time from HH:MM to HH:MM:SS format
-     *
-     * @param string $time
-     * @return string
      */
     protected function normalizeTime(string $time): string
     {
@@ -192,6 +187,6 @@ class BulkCreateSchedules
         }
 
         // Convert HH:MM to HH:MM:SS
-        return $time . ':00';
+        return $time.':00';
     }
 }
