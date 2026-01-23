@@ -18,7 +18,7 @@ type Query {
 type Mutation {
     createTeacher(input: CreateTeacherInput! @spread): Teacher @guard @create
     updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
-    deleteTeacher(id: ID! @eq(key: "id")): Teacher @guard @delete(globalId: true)
+    deleteTeacher(id: ID! @eq): Teacher @guard @delete
 
     createCourse(input: CreateCourseInput! @spread): Course @guard @create
     updateCourse(id: ID!, input: UpdateCourseInput! @spread): Course @guard @update

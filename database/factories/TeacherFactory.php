@@ -20,6 +20,8 @@ class TeacherFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
+            // business_id is automatically set by BelongsToBusiness trait
+            // but can be overridden in factory calls
         ];
     }
 }

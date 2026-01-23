@@ -32,6 +32,13 @@ trait BelongsToBusiness
                 }
             }
         });
+
+        // Prevent business_id changes on update
+        static::updating(function ($model) {
+            if ($model->isDirty('business_id') && $model->getOriginal('business_id') !== null) {
+                $model->business_id = $model->getOriginal('business_id');
+            }
+        });
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Student extends Model
 {
     /** @use HasFactory<\Database\Factories\StudentFactory> */
-    use HasFactory;
+    use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'email', 'code'];
+    protected $fillable = ['name', 'email', 'code', 'business_id'];
 
     public function availabilities(): HasMany
     {

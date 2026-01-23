@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -9,10 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
 {
-    use HasFactory;
+    use BelongsToBusiness, HasFactory;
 
     // Remove teacher_id from fillable
-    protected $fillable = ['name', 'level', 'year'];
+    protected $fillable = ['name', 'level', 'year', 'business_id'];
 
     /**
      * One course can have many schedules
