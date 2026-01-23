@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Teacher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -10,6 +12,17 @@ use Illuminate\Validation\ValidationException;
 
 class ScheduleService
 {
+    /**
+     * Error codes for structured validation messages
+     */
+    public const ERROR_TIME_INVALID = 'SCHEDULE_TIME_INVALID';
+
+    public const ERROR_OVERLAP_TEACHER = 'SCHEDULE_OVERLAP_TEACHER';
+
+    public const ERROR_OVERLAP_COURSE = 'SCHEDULE_OVERLAP_COURSE';
+
+    public const ERROR_FOREIGN_TENANT_REF = 'SCHEDULE_FOREIGN_TENANT_REF';
+
     /**
      * @param  array  $data  ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
      */
@@ -32,32 +45,75 @@ class ScheduleService
             throw new ValidationException($v);
         }
 
+        // 2) Validate tenant ownership (course and teacher belong to current business)
+        $course = Course::find($courseId);
+        $teacher = Teacher::find($teacherId);
+
+        if (! $course) {
+            throw ValidationException::withMessages([
+                'course_id' => 'Course does not exist or does not belong to current business',
+            ]);
+        }
+
+        if (! $teacher) {
+            throw ValidationException::withMessages([
+                'teacher_id' => 'Teacher does not exist or does not belong to current business',
+            ]);
+        }
+
+        // 3) Validate time range
         $start = Carbon::createFromFormat('H:i', $data['starts_at']);
         $end = Carbon::createFromFormat('H:i', $data['ends_at']);
 
         if (! $start->lt($end)) {
-            throw ValidationException::withMessages(['time' => 'starts_at must be before ends_at']);
+            throw ValidationException::withMessages([
+                'time' => 'starts_at must be before ends_at',
+            ]);
         }
 
-        // 2) Overlap check - CHANGED: Check for same TEACHER + same day (not same course)
-        // This prevents the same teacher from teaching multiple courses at the same time
-        // But allows the same course to be taught by different teachers at the same time
-        $overlaps = Schedule::query()
+        // 4) Overlap check for TEACHER (required)
+        // Prevents the same teacher from teaching multiple courses at the same time
+        $teacherOverlaps = Schedule::query()
             ->where('teacher_id', $teacherId)
             ->where('day_of_week', $data['day_of_week'])
             ->where(function ($q) use ($start, $end) {
-                // NOT (end <= existing_start OR start >= existing_end)
-                // => overlaps when (start < existing_end) AND (end > existing_start)
+                // Overlaps when (start < existing_end) AND (end > existing_start)
                 $q->where('starts_at', '<', $end->format('H:i:00'))
                     ->where('ends_at', '>', $start->format('H:i:00'));
             })
             ->exists();
 
-        if ($overlaps) {
-            throw ValidationException::withMessages(['overlap' => 'Teacher already has a schedule at this time on this day']);
+        if ($teacherOverlaps) {
+            throw ValidationException::withMessages([
+                'overlap' => 'Teacher already has a schedule at this time on this day',
+            ]);
         }
 
-        // 3) Create with new group_id
+        // 5) Optional: Overlap check for COURSE
+        // Prevents the same course from having overlapping schedules
+        // NOTE: This validation is currently DISABLED by default to allow multiple teachers
+        // teaching the same course at the same time (parallel sections).
+        // Uncomment if your business logic requires strict course-time uniqueness.
+        /*
+        $courseOverlaps = Schedule::query()
+            ->where('course_id', $courseId)
+            ->where('day_of_week', $data['day_of_week'])
+            ->where(function ($q) use ($start, $end) {
+                $q->where('starts_at', '<', $end->format('H:i:00'))
+                    ->where('ends_at', '>', $start->format('H:i:00'));
+            })
+            ->exists();
+
+        if ($courseOverlaps) {
+            throw ValidationException::withMessages([
+                'overlap' => 'Course already has a schedule at this time on this day',
+                'code' => self::ERROR_OVERLAP_COURSE,
+            ]);
+        }
+        */
+
+        // 6) Create with new group_id
+        // business_id is set automatically by BelongsToBusiness trait
         return Schedule::create([
             'course_id' => $courseId,
             'teacher_id' => $teacherId,
@@ -74,6 +130,7 @@ class ScheduleService
      */
     public function updateSchedule(int $scheduleId, array $data): Schedule
     {
+        // Find schedule (already scoped by business via global scope)
         $schedule = Schedule::findOrFail($scheduleId);
 
         // Merge current values with new data to get complete set for validation
@@ -103,17 +160,38 @@ class ScheduleService
             throw new ValidationException($v);
         }
 
+        // 2) Validate tenant ownership if course_id or teacher_id changed
+        if (array_key_exists('course_id', $data) && $data['course_id'] != $schedule->course_id) {
+            $course = Course::find($mergedData['course_id']);
+            if (! $course) {
+                throw ValidationException::withMessages([
+                    'course_id' => 'Course does not exist or does not belong to current business',
+                ]);
+            }
+        }
+
+        if (array_key_exists('teacher_id', $data) && $data['teacher_id'] != $schedule->teacher_id) {
+            $teacher = Teacher::find($mergedData['teacher_id']);
+            if (! $teacher) {
+                throw ValidationException::withMessages([
+                    'teacher_id' => 'Teacher does not exist or does not belong to current business',
+                ]);
+            }
+        }
+
+        // 3) Validate time range
         $start = Carbon::createFromFormat('H:i', $mergedData['starts_at']);
         $end = Carbon::createFromFormat('H:i', $mergedData['ends_at']);
 
         if (! $start->lt($end)) {
-            throw ValidationException::withMessages(['time' => 'starts_at must be before ends_at']);
+            throw ValidationException::withMessages([
+                'time' => 'starts_at must be before ends_at',
+            ]);
         }
 
-        // 2) Overlap check - CHANGED: Check for same TEACHER + same day (not same course)
-        // This prevents the same teacher from teaching multiple courses at the same time
-        // But allows the same course to be taught by different teachers at the same time
-        $overlaps = Schedule::query()
+        // 4) Overlap check for TEACHER (required)
+        // Prevents the same teacher from teaching multiple courses at the same time
+        $teacherOverlaps = Schedule::query()
             ->where('id', '!=', $scheduleId)  // Exclude current schedule
             ->where('teacher_id', $mergedData['teacher_id'])
             ->where('day_of_week', $mergedData['day_of_week'])
@@ -123,11 +201,37 @@ class ScheduleService
             })
             ->exists();
 
-        if ($overlaps) {
-            throw ValidationException::withMessages(['overlap' => 'Teacher already has a schedule at this time on this day']);
+        if ($teacherOverlaps) {
+            throw ValidationException::withMessages([
+                'overlap' => 'Teacher already has a schedule at this time on this day',
+            ]);
         }
 
-        // 3) Update
+        // 5) Optional: Overlap check for COURSE
+        // Prevents the same course from having overlapping schedules
+        // NOTE: This validation is currently DISABLED by default to allow multiple teachers
+        // teaching the same course at the same time (parallel sections).
+        // Uncomment if your business logic requires strict course-time uniqueness.
+        /*
+        $courseOverlaps = Schedule::query()
+            ->where('id', '!=', $scheduleId)
+            ->where('course_id', $mergedData['course_id'])
+            ->where('day_of_week', $mergedData['day_of_week'])
+            ->where(function ($q) use ($start, $end) {
+                $q->where('starts_at', '<', $end->format('H:i:00'))
+                    ->where('ends_at', '>', $start->format('H:i:00'));
+            })
+            ->exists();
+
+        if ($courseOverlaps) {
+            throw ValidationException::withMessages([
+                'overlap' => 'Course already has a schedule at this time on this day',
+                'code' => self::ERROR_OVERLAP_COURSE,
+            ]);
+        }
+        */
+
+        // 6) Update
         $updateData = [
             'course_id' => $mergedData['course_id'],
             'teacher_id' => $mergedData['teacher_id'],

@@ -14,15 +14,15 @@ class Schedule extends Model
     use BelongsToBusiness, HasFactory;
 
     // Add teacher_id to fillable
+    // NOTE: business_id should NOT be in fillable - it's set automatically by BelongsToBusiness trait
     protected $fillable = [
         'course_id',
-        'teacher_id',  // NEW
+        'teacher_id',
         'day_of_week',
         'starts_at',
         'ends_at',
         'description',
         'group_id',
-        'business_id',
     ];
 
     /**

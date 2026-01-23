@@ -13,7 +13,7 @@ class Student extends Model
     /** @use HasFactory<\Database\Factories\StudentFactory> */
     use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'email', 'code', 'business_id'];
+    protected $fillable = ['name', 'email', 'code'];
 
     public function availabilities(): HasMany
     {
