@@ -12,8 +12,7 @@ class Course extends Model
 {
     use BelongsToBusiness, HasFactory;
 
-    // Remove teacher_id from fillable
-    protected $fillable = ['name', 'level', 'year', 'business_id'];
+    protected $fillable = ['name', 'level', 'year'];
 
     /**
      * One course can have many schedules
