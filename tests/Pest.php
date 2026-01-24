@@ -45,3 +45,42 @@ function something()
 {
     // ..
 }
+
+/**
+ * Helper function to setup multi-tenancy for tests.
+ * Creates a business, user, and sets up the business context.
+ *
+ * @return object Object with properties: user, business
+ */
+function setupTenancy()
+{
+    $business = \App\Models\Business::factory()->create();
+    $user = \App\Models\User::factory()->create(['default_business_id' => $business->id]);
+    $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+    // Set the business context
+    app(\App\Services\CurrentBusiness::class)->setId($business->id);
+
+    return (object) [
+        'user' => $user,
+        'business' => $business,
+    ];
+}
+
+/**
+ * Helper to make a GraphQL request with business header.
+ *
+ * @param  array  $data  The GraphQL query data
+ * @param  int|null  $businessId  Optional business ID to include in header
+ * @return \Illuminate\Testing\TestResponse
+ */
+function postGraphQLWithBusiness(array $data, ?int $businessId = null)
+{
+    $headers = [];
+
+    if ($businessId !== null) {
+        $headers['X-Business-Id'] = $businessId;
+    }
+
+    return test()->postGraphQL($data, $headers);
+}

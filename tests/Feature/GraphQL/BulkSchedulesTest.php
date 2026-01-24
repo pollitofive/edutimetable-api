@@ -3,7 +3,6 @@
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\Teacher;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Nuwave\Lighthouse\Testing\MakesGraphQLRequests;
 
@@ -11,8 +10,10 @@ uses(RefreshDatabase::class);
 uses(MakesGraphQLRequests::class);
 
 beforeEach(function () {
-    // Create and authenticate a user
-    $this->user = User::factory()->create();
+    // Setup multi-tenancy
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
     $this->actingAs($this->user);
 
     // Create a teacher and a course

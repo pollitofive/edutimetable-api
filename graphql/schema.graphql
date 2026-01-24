@@ -4,6 +4,7 @@ scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date
 """ Root query """
 type Query {
   me: User @guard @auth
+  myBusinesses: [BusinessMembership!]! @guard @field(resolver: "App\\GraphQL\\Queries\\MyBusinesses@__invoke")
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(name: String @where(operator: "like"), email: String @where(operator: "like"), code: String @where(operator: "like")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
@@ -16,6 +17,8 @@ type Query {
 
 """ Root mutation """
 type Mutation {
+    setDefaultBusiness(business_id: ID!): User @guard @field(resolver: "App\\GraphQL\\Mutations\\SetDefaultBusiness@__invoke")
+
     createTeacher(input: CreateTeacherInput! @spread): Teacher @guard @create
     updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
     deleteTeacher(id: ID! @eq): Teacher @guard @delete
@@ -61,6 +64,18 @@ type User {
   id: ID!
   name: String!
   email: String!
+  default_business_id: ID
+}
+
+type Business @model(class: "App\\Models\\Business") {
+  id: ID!
+  name: String!
+  slug: String
+}
+
+type BusinessMembership {
+  business: Business!
+  role: String!
 }
 
 type Teacher @model(class: "App\\Models\\Teacher") {

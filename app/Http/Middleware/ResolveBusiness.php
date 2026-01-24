@@ -20,6 +20,10 @@ class ResolveBusiness
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip business validation for queries that don't require business context
+        if ($this->shouldSkipBusinessValidation($request)) {
+            return $next($request);
+        }
         // Get business ID from X-Business-Id header
         $businessId = $request->header('X-Business-Id');
 
@@ -58,5 +62,38 @@ class ResolveBusiness
         $request->attributes->set('business_id', $businessId);
 
         return $next($request);
+    }
+
+    /**
+     * Determine if business validation should be skipped for this request.
+     */
+    private function shouldSkipBusinessValidation(Request $request): bool
+    {
+        // Get the operation name from the GraphQL request
+        $operationName = $request->input('operationName', '');
+
+        // If operationName is not provided, try to extract it from the query
+        if (empty($operationName)) {
+            $query = $request->input('query', '');
+
+            // Try to extract named operation: "query myBusinesses {" or "mutation setDefaultBusiness("
+            if (preg_match('/(?:query|mutation)\s+(\w+)\s*[{(]/', $query, $matches)) {
+                $operationName = $matches[1];
+            }
+            // If no named operation, extract the root field: "query { me {" or "mutation { setDefaultBusiness("
+            elseif (preg_match('/(?:query|mutation)\s*\{\s*(\w+)/', $query, $matches)) {
+                $operationName = $matches[1];
+            }
+        }
+
+        // List of queries/mutations that don't require business context
+        $exemptOperations = [
+            'myBusinesses',
+            'me',
+            'setDefaultBusiness',
+        ];
+
+        // Check for exact match of operation name
+        return in_array($operationName, $exemptOperations, true);
     }
 }

@@ -5,7 +5,6 @@ namespace Tests\Feature\GraphQL;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\Teacher;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Nuwave\Lighthouse\Testing\MakesGraphQLRequests;
@@ -14,7 +13,9 @@ uses(RefreshDatabase::class);
 uses(MakesGraphQLRequests::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
     Sanctum::actingAs($this->user);
 
     $this->teacher1 = Teacher::factory()->create(['name' => 'Teacher One']);

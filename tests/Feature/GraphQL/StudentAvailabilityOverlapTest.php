@@ -2,14 +2,15 @@
 
 use App\Models\Student;
 use App\Models\StudentAvailability;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
     Sanctum::actingAs($this->user);
     $this->student = Student::factory()->create();
 

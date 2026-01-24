@@ -15,6 +15,8 @@ trait BelongsToBusiness
     {
         // Add global scope to automatically filter by business_id
         static::addGlobalScope('business', function ($query) {
+            // Use app() helper to resolve from service container
+            // This ensures we get the singleton instance that was set in the middleware
             $currentBusiness = app(CurrentBusiness::class);
 
             if ($currentBusiness->hasId()) {

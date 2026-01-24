@@ -5,14 +5,15 @@ namespace Tests\Feature\GraphQL;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\Teacher;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
     Sanctum::actingAs($this->user);
 
     $this->teacher = Teacher::factory()->create();

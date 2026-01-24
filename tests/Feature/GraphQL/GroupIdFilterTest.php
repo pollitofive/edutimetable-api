@@ -5,15 +5,14 @@ namespace Tests\Feature\GraphQL;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\Teacher;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
 it('can filter schedules by group_id', function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    $tenancy = setupTenancy();
+    Sanctum::actingAs($tenancy->user);
 
     $teacher = Teacher::factory()->create();
     $course = Course::factory()->create();
