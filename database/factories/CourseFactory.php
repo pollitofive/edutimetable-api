@@ -23,8 +23,6 @@ class CourseFactory extends Factory
         return [
             'name' => $this->faker->randomElement($subjects).' '.$levelName.' '.strtoupper($this->faker->unique()->bothify('?##')),
             'course_level_id' => \App\Models\CourseLevel::factory(),
-            'year' => (int) now()->year,
-            // teacher_id REMOVED - teachers are now assigned via schedules
         ];
     }
 }

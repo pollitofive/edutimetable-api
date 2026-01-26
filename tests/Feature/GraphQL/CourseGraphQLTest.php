@@ -25,12 +25,10 @@ it('can create a course via GraphQL', function () {
             createCourse(input: {
                 name: \"Mathematics 101\"
                 course_level_id: \"{$this->courseLevel->id}\"
-                year: 2024
             }) {
                 id
                 name
                 level
-                year
             }
         }
     ";
@@ -42,7 +40,6 @@ it('can create a course via GraphQL', function () {
             'createCourse' => [
                 'name' => 'Mathematics 101',
                 'level' => 'Beginner',
-                'year' => 2024,
             ],
         ],
     ]);
@@ -63,7 +60,6 @@ it('can query courses via GraphQL', function () {
                     id
                     name
                     level
-                    year
                 }
             }
         }
@@ -87,7 +83,6 @@ it('can update a course via GraphQL', function () {
                 id
                 name
                 level
-                year
             }
         }
     ";

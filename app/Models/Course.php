@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToBusiness;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ class Course extends Model
 {
     use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'year'];
+    protected $fillable = ['name'];
 
     protected $appends = ['level'];
 
@@ -23,6 +24,16 @@ class Course extends Model
     public function getLevelAttribute(): ?string
     {
         return $this->courseLevel?->name;
+    }
+
+    /**
+     * Scope to filter courses by the track of their courseLevel
+     */
+    public function scopeByTrack(Builder $query, string $track): Builder
+    {
+        return $query->whereHas('courseLevel', function (Builder $q) use ($track) {
+            $q->where('track', $track);
+        });
     }
 
     /**
