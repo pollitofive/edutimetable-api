@@ -18,11 +18,11 @@ class CourseFactory extends Factory
     public function definition(): array
     {
         $subjects = ['English', 'Math', 'Science', 'History', 'Geography', 'Art', 'Music', 'Physics', 'Chemistry', 'Biology'];
-        $level = $this->faker->randomElement(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+        $levelName = $this->faker->randomElement(['Beginner', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']);
 
         return [
-            'name' => $this->faker->randomElement($subjects).' '.$level.' '.strtoupper($this->faker->unique()->bothify('?##')),
-            'level' => $level,
+            'name' => $this->faker->randomElement($subjects).' '.$levelName.' '.strtoupper($this->faker->unique()->bothify('?##')),
+            'course_level_id' => \App\Models\CourseLevel::factory(),
             'year' => (int) now()->year,
             // teacher_id REMOVED - teachers are now assigned via schedules
         ];

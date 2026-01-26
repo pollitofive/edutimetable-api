@@ -6,6 +6,7 @@ type Query {
   me: User @guard @auth
   myBusinesses: [BusinessMembership!]! @guard @field(resolver: "App\\GraphQL\\Queries\\MyBusinesses@__invoke")
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  courseLevels(name: String @where(operator: "like"), track: String @where, sort_order: Int @where): [CourseLevel!]! @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), year: Int @where): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(name: String @where(operator: "like"), email: String @where(operator: "like"), code: String @where(operator: "like")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where, group_id: String @where): [Schedule!]! @paginate(defaultCount: 20)
@@ -22,6 +23,10 @@ type Mutation {
     createTeacher(input: CreateTeacherInput! @spread): Teacher @guard @create
     updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
     deleteTeacher(id: ID! @eq): Teacher @guard @delete
+
+    createCourseLevel(input: CreateCourseLevelInput! @spread): CourseLevel @guard @create
+    updateCourseLevel(id: ID!, input: UpdateCourseLevelInput! @spread): CourseLevel @guard @update
+    deleteCourseLevel(id: ID! @eq): CourseLevel @guard @delete
 
     createCourse(input: CreateCourseInput! @spread): Course @guard @create
     updateCourse(id: ID!, input: UpdateCourseInput! @spread): Course @guard @update
@@ -88,10 +93,27 @@ type Teacher @model(class: "App\\Models\\Teacher") {
   updated_at: DateTime!
 }
 
+type CourseLevel @model(class: "App\\Models\\CourseLevel") {
+  id: ID!
+  business_id: ID!
+  track: String!
+  name: String!
+  slug: String!
+  sort_order: Int!
+  next_level_id: ID
+  nextLevel: CourseLevel @belongsTo(relation: "nextLevel")
+  courses: [Course!]! @hasMany
+  students: [Student!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type Course @model(class: "App\\Models\\Course") {
   id: ID!
   name: String!
   level: String
+  course_level_id: ID!
+  courseLevel: CourseLevel @belongsTo(relation: "courseLevel")
   year: Int
   teachers: [Teacher!]! @belongsToMany(relation: "teachers")
   schedules: [Schedule!]! @hasMany
@@ -104,6 +126,9 @@ type Student @model(class: "App\\Models\\Student") {
   name: String!
   email: String!
   code: String!
+  level: String
+  course_level_id: ID!
+  courseLevel: CourseLevel @belongsTo(relation: "courseLevel")
   availabilities: [StudentAvailability!]! @hasMany
   enrollments: [StudentEnrollment!]! @hasMany
   schedules: [Schedule!]! @belongsToMany(relation: "schedules")
@@ -170,15 +195,31 @@ input UpdateTeacherInput {
   email: String
 }
 
+input CreateCourseLevelInput {
+  track: String!
+  name: String!
+  slug: String!
+  sort_order: Int!
+  next_level_id: ID
+}
+
+input UpdateCourseLevelInput {
+  track: String
+  name: String
+  slug: String
+  sort_order: Int
+  next_level_id: ID
+}
+
 input CreateCourseInput {
   name: String!
-  level: String
+  course_level_id: ID!
   year: Int
 }
 
 input UpdateCourseInput {
   name: String
-  level: String
+  course_level_id: ID
   year: Int
 }
 
@@ -186,12 +227,14 @@ input CreateStudentInput {
   name: String!
   email: String!
   code: String!
+  course_level_id: ID!
 }
 
 input UpdateStudentInput {
   name: String
   email: String
   code: String
+  course_level_id: ID
 }
 
 input CreateScheduleInput {

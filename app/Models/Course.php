@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -12,7 +13,25 @@ class Course extends Model
 {
     use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'level', 'year'];
+    protected $fillable = ['name', 'year'];
+
+    protected $appends = ['level'];
+
+    /**
+     * Get the level attribute (backwards compatibility)
+     */
+    public function getLevelAttribute(): ?string
+    {
+        return $this->courseLevel?->name;
+    }
+
+    /**
+     * Get the course level
+     */
+    public function courseLevel(): BelongsTo
+    {
+        return $this->belongsTo(CourseLevel::class, 'course_level_id');
+    }
 
     /**
      * One course can have many schedules

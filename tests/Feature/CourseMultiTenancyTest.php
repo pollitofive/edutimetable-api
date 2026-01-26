@@ -36,7 +36,6 @@ it('isolates courses list by business scope', function () {
     // Create course in business A
     $courseA = Course::factory()->create([
         'name' => 'Mathematics A',
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -46,7 +45,6 @@ it('isolates courses list by business scope', function () {
     // Create course in business B
     $courseB = Course::factory()->create([
         'name' => 'Physics B',
-        'level' => 'University',
         'year' => 2024,
     ]);
 
@@ -74,7 +72,6 @@ it('automatically sets business_id when creating course', function () {
     // Create course without specifying business_id
     $course = Course::factory()->create([
         'name' => 'Auto Course',
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -97,7 +94,6 @@ it('prevents updating course from different business (cross-tenant protection)',
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $courseA = Course::factory()->create([
         'name' => 'Course A',
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -125,7 +121,6 @@ it('prevents deleting course from different business (cross-tenant protection)',
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $courseA = Course::factory()->create([
         'name' => 'Course A',
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -157,7 +152,6 @@ it('allows same course name in different businesses (unique per business)', func
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $courseA = Course::factory()->create([
         'name' => $sameName,
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -165,7 +159,6 @@ it('allows same course name in different businesses (unique per business)', func
     app(CurrentBusiness::class)->setId($this->businessB->id);
     $courseB = Course::factory()->create([
         'name' => $sameName,
-        'level' => 'University',
         'year' => 2025,
     ]);
 
@@ -195,7 +188,6 @@ it('prevents duplicate course name within same business', function () {
     // Create first course with name
     Course::factory()->create([
         'name' => $sameName,
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -203,7 +195,6 @@ it('prevents duplicate course name within same business', function () {
     // Should throw database exception due to unique constraint
     expect(fn () => Course::factory()->create([
         'name' => $sameName,
-        'level' => 'University',
         'year' => 2025,
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 });
@@ -213,7 +204,6 @@ it('prevents changing business_id on update', function () {
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $course = Course::factory()->create([
         'name' => 'Course A',
-        'level' => 'High School',
         'year' => 2024,
     ]);
 
@@ -236,6 +226,5 @@ it('business_id is not in fillable array', function () {
 
     expect($course->getFillable())->not->toContain('business_id');
     expect($course->getFillable())->toContain('name');
-    expect($course->getFillable())->toContain('level');
     expect($course->getFillable())->toContain('year');
 });

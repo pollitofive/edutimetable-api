@@ -3,6 +3,7 @@
 namespace Tests\Feature\GraphQL;
 
 use App\Models\Course;
+use App\Models\CourseLevel;
 use App\Models\Teacher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -15,14 +16,15 @@ beforeEach(function () {
     $this->business = $tenancy->business;
     Sanctum::actingAs($this->user);
     $this->teacher = Teacher::factory()->create();
+    $this->courseLevel = CourseLevel::factory()->create(['name' => 'Beginner']);
 });
 
 it('can create a course via GraphQL', function () {
-    $mutation = '
+    $mutation = "
         mutation {
             createCourse(input: {
-                name: "Mathematics 101"
-                level: "Beginner"
+                name: \"Mathematics 101\"
+                course_level_id: \"{$this->courseLevel->id}\"
                 year: 2024
             }) {
                 id
@@ -31,7 +33,7 @@ it('can create a course via GraphQL', function () {
                 year
             }
         }
-    ';
+    ";
 
     $response = $this->postGraphQL(['query' => $mutation]);
 
@@ -74,12 +76,13 @@ it('can query courses via GraphQL', function () {
 
 it('can update a course via GraphQL', function () {
     $course = Course::factory()->create();
+    $advancedLevel = CourseLevel::factory()->create(['name' => 'Advanced']);
 
     $mutation = "
         mutation {
             updateCourse(id: {$course->id}, input: {
                 name: \"Advanced Mathematics\"
-                level: \"Advanced\"
+                course_level_id: \"{$advancedLevel->id}\"
             }) {
                 id
                 name

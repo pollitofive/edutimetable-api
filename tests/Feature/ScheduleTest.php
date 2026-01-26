@@ -7,8 +7,16 @@ use App\Models\Schedule;
 use App\Services\ScheduleService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
+    Sanctum::actingAs($this->user);
+});
 
 it('creates a non-overlapping schedule for a course', function () {
     $course = Course::factory()->create();

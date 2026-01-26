@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -14,6 +15,24 @@ class Student extends Model
     use BelongsToBusiness, HasFactory;
 
     protected $fillable = ['name', 'email', 'code'];
+
+    protected $appends = ['level'];
+
+    /**
+     * Get the level attribute (backwards compatibility)
+     */
+    public function getLevelAttribute(): ?string
+    {
+        return $this->courseLevel?->name;
+    }
+
+    /**
+     * Get the course level
+     */
+    public function courseLevel(): BelongsTo
+    {
+        return $this->belongsTo(CourseLevel::class, 'course_level_id');
+    }
 
     public function availabilities(): HasMany
     {

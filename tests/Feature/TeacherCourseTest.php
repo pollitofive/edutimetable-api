@@ -5,8 +5,16 @@ namespace Tests\Feature;
 use App\Models\Course;
 use App\Models\Teacher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $tenancy = setupTenancy();
+    $this->user = $tenancy->user;
+    $this->business = $tenancy->business;
+    Sanctum::actingAs($this->user);
+});
 
 it('a teacher can have many schedules through courses', function () {
     $teacher = Teacher::factory()->create();
