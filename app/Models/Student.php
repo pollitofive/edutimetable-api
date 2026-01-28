@@ -34,7 +34,7 @@ class Student extends Model
     {
         return $query->where(function (Builder $q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('email', 'like', "%{$term}%");
+                ->orWhere('email', 'like', "%{$term}%");
         });
     }
 

@@ -28,7 +28,7 @@ class BulkUpdateStudentAvailabilities
         // Validate at least one availability is provided
         if (empty($availabilities)) {
             throw ValidationException::withMessages([
-                'availabilities' => ['At least one availability slot is required.'],
+                'availabilities' => [__('availability.at_least_one')],
             ]);
         }
 
@@ -78,13 +78,12 @@ class BulkUpdateStudentAvailabilities
             if ($availability['start_time'] >= $availability['end_time']) {
                 throw ValidationException::withMessages([
                     'availabilities' => [
-                        sprintf(
-                            'Slot #%d (%s %s-%s): End time must be after start time.',
-                            $slotNumber,
-                            $dayName,
-                            $availability['start_time'],
-                            $availability['end_time']
-                        ),
+                        __('availability.end_after_start', [
+                            'slot' => $slotNumber,
+                            'day' => $dayName,
+                            'start' => $availability['start_time'],
+                            'end' => $availability['end_time'],
+                        ]),
                     ],
                 ]);
             }
@@ -105,17 +104,16 @@ class BulkUpdateStudentAvailabilities
                     $otherDayName = $this->getDayName((int) $otherSlot['day_of_week']);
                     throw ValidationException::withMessages([
                         'availabilities' => [
-                            sprintf(
-                                'Slot #%d (%s %s-%s) overlaps with Slot #%d (%s %s-%s).',
-                                $slotNumber,
-                                $dayName,
-                                substr($availability['start_time'], 0, 5),
-                                substr($availability['end_time'], 0, 5),
-                                $otherSlotNumber,
-                                $otherDayName,
-                                substr($otherSlot['start_time'], 0, 5),
-                                substr($otherSlot['end_time'], 0, 5)
-                            ),
+                            __('availability.overlap_slots', [
+                                'slot1' => $slotNumber,
+                                'day1' => $dayName,
+                                'start1' => substr($availability['start_time'], 0, 5),
+                                'end1' => substr($availability['end_time'], 0, 5),
+                                'slot2' => $otherSlotNumber,
+                                'day2' => $otherDayName,
+                                'start2' => substr($otherSlot['start_time'], 0, 5),
+                                'end2' => substr($otherSlot['end_time'], 0, 5),
+                            ]),
                         ],
                     ]);
                 }

@@ -32,7 +32,7 @@ class UpdateStudentAvailability
         // Validate time constraint
         if ($startTime >= $endTime) {
             throw ValidationException::withMessages([
-                'end_time' => ['End time must be after start time.'],
+                'end_time' => [__('availability.end_after_start_simple')],
             ]);
         }
 
@@ -49,12 +49,11 @@ class UpdateStudentAvailability
             $dayName = $this->getDayName($dayOfWeek);
             throw ValidationException::withMessages([
                 'time_slot' => [
-                    sprintf(
-                        'This availability overlaps with an existing slot on %s from %s to %s.',
-                        $dayName,
-                        substr($overlapping->start_time, 0, 5),
-                        substr($overlapping->end_time, 0, 5)
-                    ),
+                    __('availability.overlap_single', [
+                        'day' => $dayName,
+                        'start' => substr($overlapping->start_time, 0, 5),
+                        'end' => substr($overlapping->end_time, 0, 5),
+                    ]),
                 ],
             ]);
         }

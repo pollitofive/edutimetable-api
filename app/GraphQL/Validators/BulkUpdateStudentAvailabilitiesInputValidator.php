@@ -18,7 +18,7 @@ class BulkUpdateStudentAvailabilitiesInputValidator
                         if ($availability['start_time'] >= $availability['end_time']) {
                             $validator->errors()->add(
                                 "availabilities.{$index}.end_time",
-                                'End time must be after start time.'
+                                __('availability.end_after_start_simple')
                             );
                         }
                     }

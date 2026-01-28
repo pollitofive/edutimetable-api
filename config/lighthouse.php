@@ -40,6 +40,9 @@ return [
             // middleware, this delegates auth and permission checks to the field level.
             Nuwave\Lighthouse\Http\Middleware\AttemptAuthentication::class,
 
+            // Set locale based on authenticated user's preference
+            \App\Http\Middleware\SetLocale::class,
+
             // Multi-tenancy: Resolve business context from X-Business-Id header
             \App\Http\Middleware\ResolveBusiness::class,
 
