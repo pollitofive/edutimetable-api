@@ -65,15 +65,7 @@ trait ValidatesScheduleOverlaps
      */
     protected function getDayName(int $dayOfWeek): string
     {
-        $days = [
-            0 => 'Sunday',
-            1 => 'Monday',
-            2 => 'Tuesday',
-            3 => 'Wednesday',
-            4 => 'Thursday',
-            5 => 'Friday',
-            6 => 'Saturday',
-        ];
+        $days = __('schedule.days');
 
         return $days[$dayOfWeek] ?? "Day $dayOfWeek";
     }

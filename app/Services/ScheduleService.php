@@ -51,13 +51,13 @@ class ScheduleService
 
         if (! $course) {
             throw ValidationException::withMessages([
-                'course_id' => 'Course does not exist or does not belong to current business',
+                'course_id' => __('schedule.course_not_exists'),
             ]);
         }
 
         if (! $teacher) {
             throw ValidationException::withMessages([
-                'teacher_id' => 'Teacher does not exist or does not belong to current business',
+                'teacher_id' => __('schedule.teacher_not_exists'),
             ]);
         }
 
@@ -67,7 +67,7 @@ class ScheduleService
 
         if (! $start->lt($end)) {
             throw ValidationException::withMessages([
-                'time' => 'starts_at must be before ends_at',
+                'time' => __('schedule.starts_before_ends'),
             ]);
         }
 
@@ -85,7 +85,7 @@ class ScheduleService
 
         if ($teacherOverlaps) {
             throw ValidationException::withMessages([
-                'overlap' => 'Teacher already has a schedule at this time on this day',
+                'overlap' => __('schedule.teacher_overlap'),
             ]);
         }
 
@@ -165,7 +165,7 @@ class ScheduleService
             $course = Course::find($mergedData['course_id']);
             if (! $course) {
                 throw ValidationException::withMessages([
-                    'course_id' => 'Course does not exist or does not belong to current business',
+                    'course_id' => __('schedule.course_not_exists'),
                 ]);
             }
         }
@@ -174,7 +174,7 @@ class ScheduleService
             $teacher = Teacher::find($mergedData['teacher_id']);
             if (! $teacher) {
                 throw ValidationException::withMessages([
-                    'teacher_id' => 'Teacher does not exist or does not belong to current business',
+                    'teacher_id' => __('schedule.teacher_not_exists'),
                 ]);
             }
         }
@@ -185,7 +185,7 @@ class ScheduleService
 
         if (! $start->lt($end)) {
             throw ValidationException::withMessages([
-                'time' => 'starts_at must be before ends_at',
+                'time' => __('schedule.starts_before_ends'),
             ]);
         }
 
@@ -203,7 +203,7 @@ class ScheduleService
 
         if ($teacherOverlaps) {
             throw ValidationException::withMessages([
-                'overlap' => 'Teacher already has a schedule at this time on this day',
+                'overlap' => __('schedule.teacher_overlap'),
             ]);
         }
 

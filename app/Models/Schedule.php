@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToBusiness;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -58,5 +59,21 @@ class Schedule extends Model
         return $this->belongsToMany(Student::class, 'student_enrollments')
             ->withPivot('enrolled_at', 'status', 'notes')
             ->withTimestamps();
+    }
+
+    /**
+     * Filter schedules that start at or after a given time
+     */
+    public function scopeStartsAtFrom(Builder $query, string $time): Builder
+    {
+        return $query->where('starts_at', '>=', $time);
+    }
+
+    /**
+     * Filter schedules that end at or before a given time
+     */
+    public function scopeStartsAtTo(Builder $query, string $time): Builder
+    {
+        return $query->where('ends_at', '<=', $time);
     }
 }

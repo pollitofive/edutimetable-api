@@ -31,7 +31,7 @@ class BulkUpdateSchedules
         // Validate at least one schedule is provided
         if (empty($schedules)) {
             throw ValidationException::withMessages([
-                'schedules' => ['At least one schedule slot is required.'],
+                'schedules' => [__('schedule.at_least_one')],
             ]);
         }
 
@@ -99,13 +99,12 @@ class BulkUpdateSchedules
             if (! isset($schedule['teacher_id'])) {
                 throw ValidationException::withMessages([
                     'schedules' => [
-                        sprintf(
-                            'Schedule slot #%d (%s %s-%s): teacher_id is required.',
-                            $slotNumber,
-                            $dayName,
-                            $schedule['starts_at'],
-                            $schedule['ends_at']
-                        ),
+                        __('schedule.teacher_required', [
+                            'slot' => $slotNumber,
+                            'day' => $dayName,
+                            'start' => $schedule['starts_at'],
+                            'end' => $schedule['ends_at'],
+                        ]),
                     ],
                 ]);
             }
@@ -114,13 +113,12 @@ class BulkUpdateSchedules
             if ($schedule['starts_at'] >= $schedule['ends_at']) {
                 throw ValidationException::withMessages([
                     'schedules' => [
-                        sprintf(
-                            'Schedule slot #%d (%s %s-%s): End time must be after start time.',
-                            $slotNumber,
-                            $dayName,
-                            $schedule['starts_at'],
-                            $schedule['ends_at']
-                        ),
+                        __('schedule.end_after_start', [
+                            'slot' => $slotNumber,
+                            'day' => $dayName,
+                            'start' => $schedule['starts_at'],
+                            'end' => $schedule['ends_at'],
+                        ]),
                     ],
                 ]);
             }
@@ -149,15 +147,14 @@ class BulkUpdateSchedules
             if ($overlapping) {
                 throw ValidationException::withMessages([
                     'schedules' => [
-                        sprintf(
-                            'Schedule slot #%d (%s %s-%s): Teacher already has a schedule from %s to %s for another course.',
-                            $slotNumber,
-                            $dayName,
-                            $schedule['starts_at'],
-                            $schedule['ends_at'],
-                            substr($overlapping->starts_at, 0, 5),
-                            substr($overlapping->ends_at, 0, 5)
-                        ),
+                        __('schedule.teacher_overlap_db_other_course', [
+                            'slot' => $slotNumber,
+                            'day' => $dayName,
+                            'start' => $schedule['starts_at'],
+                            'end' => $schedule['ends_at'],
+                            'existing_start' => substr($overlapping->starts_at, 0, 5),
+                            'existing_end' => substr($overlapping->ends_at, 0, 5),
+                        ]),
                     ],
                 ]);
             }
@@ -181,17 +178,16 @@ class BulkUpdateSchedules
                         $otherDayName = $this->getDayName((int) $otherSlot['day_of_week']);
                         throw ValidationException::withMessages([
                             'schedules' => [
-                                sprintf(
-                                    'Schedule slot #%d (%s %s-%s): Teacher conflict with slot #%d (%s %s-%s).',
-                                    $slotNumber,
-                                    $dayName,
-                                    $schedule['starts_at'],
-                                    $schedule['ends_at'],
-                                    $otherSlotNumber,
-                                    $otherDayName,
-                                    $otherSlot['starts_at'],
-                                    $otherSlot['ends_at']
-                                ),
+                                __('schedule.teacher_conflict_slots', [
+                                    'slot1' => $slotNumber,
+                                    'day1' => $dayName,
+                                    'start1' => $schedule['starts_at'],
+                                    'end1' => $schedule['ends_at'],
+                                    'slot2' => $otherSlotNumber,
+                                    'day2' => $otherDayName,
+                                    'start2' => $otherSlot['starts_at'],
+                                    'end2' => $otherSlot['ends_at'],
+                                ]),
                             ],
                         ]);
                     }

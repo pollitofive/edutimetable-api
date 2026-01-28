@@ -9,7 +9,7 @@ type Query {
   courseLevels(name: String @where(operator: "like"), track: String @where, sort_order: Int @where): [CourseLevel!]! @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(search: String @scope(name: "search"), code: String @where(operator: "like"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where, group_id: String @where): [Schedule!]! @paginate(defaultCount: 20)
+  schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where(operator: "like"), group_id: String @where(operator: "like"), starts_at_from: String @scope(name: "startsAtFrom"), starts_at_to: String @scope(name: "startsAtTo")): [Schedule!]! @paginate(defaultCount: 20)
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
   studentEnrollments(student_id: ID @where, schedule_id: ID @where, status: StudentEnrollmentStatus @where): [StudentEnrollment!]! @paginate(defaultCount: 20) @orderBy(column: "created_at", direction: DESC)

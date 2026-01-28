@@ -57,7 +57,7 @@ describe('Teacher-Based Validation (New Architecture)', function () {
         $response->assertJson([
             'errors' => [
                 [
-                    'message' => 'Teacher already has a schedule at this time on this day',
+                    'message' => 'Teacher already has a schedule at this time on this day.',
                 ],
             ],
         ]);
@@ -352,7 +352,7 @@ describe('Update Operations with Teacher Validation', function () {
         $response->assertJson([
             'errors' => [
                 [
-                    'message' => 'Teacher already has a schedule at this time on this day',
+                    'message' => 'Teacher already has a schedule at this time on this day.',
                 ],
             ],
         ]);

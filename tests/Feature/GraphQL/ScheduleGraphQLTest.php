@@ -93,7 +93,7 @@ it('prevents overlapping schedules for same course and day', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'Teacher already has a schedule at this time on this day',
+                'message' => 'Teacher already has a schedule at this time on this day.',
             ],
         ],
     ]);
@@ -435,7 +435,7 @@ it('validates start time before end time on create', function () {
     $response->assertJson([
         'errors' => [
             [
-                'message' => 'starts_at must be before ends_at',
+                'message' => 'starts_at must be before ends_at.',
             ],
         ],
     ]);
