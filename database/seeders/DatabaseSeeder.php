@@ -66,8 +66,8 @@ class DatabaseSeeder extends Seeder
         );
 
         $demoBusiness = Business::firstOrCreate(
-            ['slug' => 'demo-academy'],
-            ['name' => 'Demo Academy']
+            ['slug' => 'ielit'],
+            ['name' => 'IELI Instituto de Enseñanza de Lengua Inglesa']
         );
 
         $this->command->info("Businesses ready: {$defaultBusiness->name}, {$demoBusiness->name}");
@@ -93,10 +93,10 @@ class DatabaseSeeder extends Seeder
 
         // Demo user for demo business
         $demoUser = User::firstOrCreate(
-            ['email' => 'demo@example.com'],
+            ['email' => 'administracion@ieliargentina.com.ar'],
             [
-                'name' => 'Demo User',
-                'password' => Hash::make('password'),
+                'name' => 'Graciela Pita',
+                'password' => Hash::make('12345678'),
                 'default_business_id' => $demoBusiness->id,
             ]
         );
@@ -205,6 +205,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Seeding data for Demo Business...');
 
         // Switch to demo business context
+        /*
         $currentBusiness->setId($demoBusiness->id);
 
         // Create course levels for demo business
@@ -285,5 +286,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('  Admin: admin@example.com / password');
         $this->command->info('  Demo:  demo@example.com / password');
         $this->command->info('  Staff: staff@example.com / password');
+        */
     }
 }
