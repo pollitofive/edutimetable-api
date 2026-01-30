@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('student_enrollments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
             // Foreign keys
             $table->foreignId('student_id')
@@ -32,11 +35,14 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes for better query performance
-            $table->index(['student_id', 'status']);
-            $table->index(['schedule_id', 'status']);
+            $table->index(['business_id', 'student_id', 'status']);
+            $table->index(['business_id', 'schedule_id', 'status']);
 
-            // Unique constraint: student can't enroll twice in same schedule
-            $table->unique(['student_id', 'schedule_id'], 'unique_student_schedule');
+            // Unique constraint: student can't enroll twice in same schedule within same business
+            $table->unique(
+                ['business_id', 'student_id', 'schedule_id'],
+                'unique_business_student_schedule'
+            );
         });
     }
 

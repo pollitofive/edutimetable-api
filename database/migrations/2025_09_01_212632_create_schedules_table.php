@@ -13,15 +13,37 @@ return new class extends Migration
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->id();
+            $table->uuid('group_id')->nullable();
+            $table->foreignId('business_id')
+                ->constrained()
+                ->cascadeOnDelete();
             $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
+            $table->foreignId('teacher_id')
+                ->constrained('teachers')
+                ->cascadeOnDelete();
+            $table->text('description')->nullable();
             $table->unsignedTinyInteger('day_of_week'); // 0..6 (Sun..Sat)
             $table->time('starts_at');
             $table->time('ends_at');
             $table->timestamps();
 
-            $table->index(['course_id', 'day_of_week']);
-            // Optional uniqueness to avoid exact duplicates:
-            $table->unique(['course_id', 'day_of_week', 'starts_at', 'ends_at']);
+            // Unique constraint: prevent duplicate schedules within business
+            $table->unique(
+                ['business_id', 'course_id', 'teacher_id', 'day_of_week', 'starts_at', 'ends_at'],
+                'schedules_business_course_teacher_time_unique'
+            );
+
+            // Indexes for efficient queries
+            $table->index(['business_id', 'group_id'], 'schedules_business_group_idx');
+            $table->index(
+                ['business_id', 'course_id', 'day_of_week', 'starts_at', 'ends_at'],
+                'schedules_business_course_time_idx'
+            );
+            $table->index(
+                ['business_id', 'teacher_id', 'day_of_week', 'starts_at', 'ends_at'],
+                'schedules_business_teacher_time_idx'
+            );
+
             // DB-level CHECK is nice if available (MySQL 8+), but we still validate in app:
             // $table->check('starts_at < ends_at');
         });

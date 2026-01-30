@@ -13,9 +13,18 @@ return new class extends Migration
     {
         Schema::create('teachers', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')
+                ->constrained()
+                ->cascadeOnDelete();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email');
             $table->timestamps();
+
+            // Composite unique: email unique per business
+            $table->unique(['business_id', 'email'], 'teachers_business_email_unique');
+
+            // Composite index for efficient pagination by business
+            $table->index(['business_id', 'id'], 'teachers_business_id_index');
         });
     }
 

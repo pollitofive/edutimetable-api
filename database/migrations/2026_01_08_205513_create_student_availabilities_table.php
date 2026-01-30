@@ -13,14 +13,24 @@ return new class extends Migration
     {
         Schema::create('student_availabilities', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('business_id')
+                ->constrained()
+                ->cascadeOnDelete();
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->tinyInteger('day_of_week'); // 0=Monday, 1=Tuesday, ..., 6=Sunday
-            $table->string('start_time'); // "HH:mm" format
-            $table->string('end_time'); // "HH:mm" format
+            $table->time('start_time');
+            $table->time('end_time');
             $table->timestamps();
 
-            // Prevent duplicate availability slots
-            $table->unique(['student_id', 'day_of_week', 'start_time', 'end_time'], 'student_avail_unique');
+            // Prevent duplicate availability slots per business
+            $table->unique(
+                ['business_id', 'student_id', 'day_of_week', 'start_time', 'end_time'],
+                'student_avail_business_unique'
+            );
+
+            // Composite indexes for efficient queries
+            $table->index(['business_id', 'student_id', 'day_of_week'], 'student_avail_lookup_index');
+            $table->index(['business_id', 'day_of_week'], 'student_avail_day_index');
         });
     }
 
