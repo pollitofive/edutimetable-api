@@ -101,6 +101,7 @@ type CourseLevel @model(class: "App\\Models\\CourseLevel") {
   slug: String!
   sort_order: Int!
   next_level_id: ID
+  texts: String
   nextLevel: CourseLevel @belongsTo(relation: "nextLevel")
   courses: [Course!]! @hasMany
   students: [Student!]! @hasMany
@@ -200,6 +201,7 @@ input CreateCourseLevelInput {
   slug: String!
   sort_order: Int!
   next_level_id: ID
+  texts: String
 }
 
 input UpdateCourseLevelInput {
@@ -208,6 +210,7 @@ input UpdateCourseLevelInput {
   slug: String
   sort_order: Int
   next_level_id: ID
+  texts: String
 }
 
 input CreateCourseInput {

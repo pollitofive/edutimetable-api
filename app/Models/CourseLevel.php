@@ -18,6 +18,7 @@ class CourseLevel extends Model
         'slug',
         'sort_order',
         'next_level_id',
+        'texts',
     ];
 
     public function nextLevel(): BelongsTo

@@ -34,6 +34,7 @@ class CourseLevelFactory extends Factory
             'slug' => $level['slug'].'-'.$uniqueSuffix,
             'sort_order' => $level['sort_order'],
             'next_level_id' => null,
+            'texts' => null,
         ];
     }
 }

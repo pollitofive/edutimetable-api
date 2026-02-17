@@ -22,6 +22,8 @@ return new class extends Migration
 
             $table->unsignedBigInteger('next_level_id')->nullable();
 
+            $table->text('texts')->nullable();
+
             $table->timestamps();
 
             $table->unique(['business_id', 'track', 'slug'], 'course_levels_business_track_slug_unique');
