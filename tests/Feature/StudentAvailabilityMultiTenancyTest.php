@@ -38,7 +38,6 @@ it('isolates student availabilities by business scope', function () {
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     // Create availability for student A
@@ -56,7 +55,6 @@ it('isolates student availabilities by business scope', function () {
     $studentB = Student::factory()->create([
         'name' => 'Student B',
         'email' => 'student-b@test.com',
-        'code' => 'STU-B-001',
     ]);
 
     // Create availability for student B
@@ -92,7 +90,6 @@ it('automatically sets business_id when creating student availability', function
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create availability without specifying business_id
@@ -124,7 +121,6 @@ it('prevents updating availability from different business (cross-tenant protect
     $student = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     $availability = StudentAvailability::create([
@@ -160,7 +156,6 @@ it('prevents deleting availability from different business (cross-tenant protect
     $student = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     $availability = StudentAvailability::create([
@@ -197,7 +192,6 @@ it('allows same time slot for different students in different businesses', funct
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     $availabilityA = StudentAvailability::create([
@@ -213,7 +207,6 @@ it('allows same time slot for different students in different businesses', funct
     $studentB = Student::factory()->create([
         'name' => 'Student B',
         'email' => 'student-b@test.com',
-        'code' => 'STU-B-001',
     ]);
 
     $availabilityB = StudentAvailability::create([
@@ -239,7 +232,6 @@ it('prevents duplicate availability within same business', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create first availability
@@ -267,7 +259,6 @@ it('prevents changing business_id on update', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     $availability = StudentAvailability::create([
@@ -307,7 +298,6 @@ it('validates that start_time is before end_time', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create valid availability
@@ -337,7 +327,6 @@ it('detects overlapping time ranges for same student and day', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create first availability: 08:00 - 10:00
@@ -373,7 +362,6 @@ it('allows adjacent time ranges for same student and day', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create first availability: 08:00 - 10:00
@@ -411,7 +399,6 @@ it('allows same time range for different days for same student', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create availability for Monday
@@ -441,7 +428,6 @@ it('excludes self when checking overlaps during update', function () {
     $student = Student::factory()->create([
         'name' => 'Test Student',
         'email' => 'test@test.com',
-        'code' => 'TEST-001',
     ]);
 
     // Create availability
@@ -465,7 +451,6 @@ it('isolates overlap detection by business', function () {
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     // Create availability in business A
@@ -482,7 +467,6 @@ it('isolates overlap detection by business', function () {
     $studentB = Student::factory()->create([
         'name' => 'Student B',
         'email' => 'student-b@test.com',
-        'code' => 'STU-B-001',
     ]);
 
     // Test availability in business B should not overlap with business A's data

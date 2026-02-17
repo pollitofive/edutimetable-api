@@ -8,7 +8,7 @@ type Query {
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   courseLevels(name: String @where(operator: "like"), track: String @where, sort_order: Int @where): [CourseLevel!]! @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
   courses(name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  students(search: String @scope(name: "search"), code: String @where(operator: "like"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  students(search: String @scope(name: "search"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where(operator: "like"), group_id: String @where(operator: "like"), starts_at_from: String @scope(name: "startsAtFrom"), starts_at_to: String @scope(name: "startsAtTo")): [Schedule!]! @paginate(defaultCount: 20)
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
@@ -126,7 +126,6 @@ type Student @model(class: "App\\Models\\Student") {
   id: ID!
   name: String!
   email: String!
-  code: String!
   phone: String
   level: String
   course_level_id: ID!
@@ -160,6 +159,7 @@ type Schedule @model(class: "App\\Models\\Schedule") {
   ends_at: String!
   description: String!
   group_id: String
+  capacity: Int!
   enrollments: [StudentEnrollment!]! @hasMany
   students: [Student!]! @belongsToMany(relation: "students")
   created_at: DateTime!
@@ -230,7 +230,6 @@ input UpdateCourseInput {
 input CreateStudentInput {
   name: String!
   email: String!
-  code: String!
   phone: String
   course_level_id: ID!
 }
@@ -238,7 +237,6 @@ input CreateStudentInput {
 input UpdateStudentInput {
   name: String
   email: String
-  code: String
   phone: String
   course_level_id: ID
 }
@@ -250,6 +248,7 @@ input CreateScheduleInput {
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
   description: String!
+  capacity: Int @rules(apply: ["integer", "min:1"])
 }
 
 input UpdateScheduleInput {
@@ -260,6 +259,7 @@ input UpdateScheduleInput {
   ends_at: String @rules(apply: ["date_format:H:i"])
   description: String
   group_id: String
+  capacity: Int @rules(apply: ["integer", "min:1"])
 }
 
 input CreateStudentAvailabilityInput {

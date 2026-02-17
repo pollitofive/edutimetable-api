@@ -18,9 +18,9 @@ beforeEach(function () {
 
 it('orders student availabilities by student name alphabetically', function () {
     // Create students with names in non-alphabetical order
-    $studentCharlie = Student::factory()->create(['name' => 'Charlie Brown', 'email' => 'charlie@test.com', 'code' => 'C001']);
-    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com', 'code' => 'A001']);
-    $studentBob = Student::factory()->create(['name' => 'Bob Johnson', 'email' => 'bob@test.com', 'code' => 'B001']);
+    $studentCharlie = Student::factory()->create(['name' => 'Charlie Brown', 'email' => 'charlie@test.com']);
+    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com']);
+    $studentBob = Student::factory()->create(['name' => 'Bob Johnson', 'email' => 'bob@test.com']);
 
     // Create availabilities for each student
     StudentAvailability::factory()->create([
@@ -76,7 +76,7 @@ it('orders student availabilities by student name alphabetically', function () {
 
 it('orders by student name then by day_of_week and start_time', function () {
     // Create a student with multiple availabilities
-    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com', 'code' => 'A001']);
+    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com']);
 
     // Create availabilities in non-chronological order
     StudentAvailability::factory()->create([
@@ -131,8 +131,8 @@ it('orders by student name then by day_of_week and start_time', function () {
 
 it('maintains ordering when filtering by student_id', function () {
     // Create students
-    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com', 'code' => 'A001']);
-    $studentBob = Student::factory()->create(['name' => 'Bob Johnson', 'email' => 'bob@test.com', 'code' => 'B001']);
+    $studentAlice = Student::factory()->create(['name' => 'Alice Smith', 'email' => 'alice@test.com']);
+    $studentBob = Student::factory()->create(['name' => 'Bob Johnson', 'email' => 'bob@test.com']);
 
     // Create multiple availabilities for Alice
     StudentAvailability::factory()->create([

@@ -37,7 +37,6 @@ it('isolates students list by business scope', function () {
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     // Set context to business B
@@ -47,7 +46,6 @@ it('isolates students list by business scope', function () {
     $studentB = Student::factory()->create([
         'name' => 'Student B',
         'email' => 'student-b@test.com',
-        'code' => 'STU-B-001',
     ]);
 
     // Query as business A - should only see student A
@@ -75,7 +73,6 @@ it('automatically sets business_id when creating student', function () {
     $student = Student::factory()->create([
         'name' => 'Auto Student',
         'email' => 'auto@test.com',
-        'code' => 'AUTO-001',
     ]);
 
     // Refresh to get actual DB values
@@ -89,7 +86,6 @@ it('automatically sets business_id when creating student', function () {
         'id' => $student->id,
         'business_id' => $this->businessA->id,
         'email' => 'auto@test.com',
-        'code' => 'AUTO-001',
     ]);
 });
 
@@ -99,7 +95,6 @@ it('prevents updating student from different business (cross-tenant protection)'
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     // Try to update from business B context
@@ -127,7 +122,6 @@ it('prevents deleting student from different business (cross-tenant protection)'
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     $studentId = $studentA->id;
@@ -159,7 +153,6 @@ it('allows same email in different businesses (unique per business)', function (
     $studentA = Student::factory()->create([
         'name' => 'Student A',
         'email' => $sameEmail,
-        'code' => 'STU-A-001',
     ]);
 
     // Create student in business B with same email - should succeed
@@ -167,7 +160,6 @@ it('allows same email in different businesses (unique per business)', function (
     $studentB = Student::factory()->create([
         'name' => 'Student B',
         'email' => $sameEmail,
-        'code' => 'STU-B-001',
     ]);
 
     // Both should exist with same email but different business_id
@@ -187,42 +179,6 @@ it('allows same email in different businesses (unique per business)', function (
     ]);
 });
 
-it('allows same code in different businesses (unique per business)', function () {
-    $sameCode = 'STU-001';
-
-    // Create student in business A with code
-    app(CurrentBusiness::class)->setId($this->businessA->id);
-    $studentA = Student::factory()->create([
-        'name' => 'Student A',
-        'email' => 'student-a@test.com',
-        'code' => $sameCode,
-    ]);
-
-    // Create student in business B with same code - should succeed
-    app(CurrentBusiness::class)->setId($this->businessB->id);
-    $studentB = Student::factory()->create([
-        'name' => 'Student B',
-        'email' => 'student-b@test.com',
-        'code' => $sameCode,
-    ]);
-
-    // Both should exist with same code but different business_id
-    expect($studentA->code)->toBe($sameCode);
-    expect($studentB->code)->toBe($sameCode);
-    expect($studentA->business_id)->toBe($this->businessA->id);
-    expect($studentB->business_id)->toBe($this->businessB->id);
-
-    $this->assertDatabaseHas('students', [
-        'business_id' => $this->businessA->id,
-        'code' => $sameCode,
-    ]);
-
-    $this->assertDatabaseHas('students', [
-        'business_id' => $this->businessB->id,
-        'code' => $sameCode,
-    ]);
-});
-
 it('prevents duplicate email within same business', function () {
     $sameEmail = 'duplicate@test.com';
 
@@ -233,7 +189,6 @@ it('prevents duplicate email within same business', function () {
     Student::factory()->create([
         'name' => 'First Student',
         'email' => $sameEmail,
-        'code' => 'STU-001',
     ]);
 
     // Try to create second student with same email in same business
@@ -241,29 +196,6 @@ it('prevents duplicate email within same business', function () {
     expect(fn () => Student::factory()->create([
         'name' => 'Second Student',
         'email' => $sameEmail,
-        'code' => 'STU-002',
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
-});
-
-it('prevents duplicate code within same business', function () {
-    $sameCode = 'STU-001';
-
-    // Set context to business A
-    app(CurrentBusiness::class)->setId($this->businessA->id);
-
-    // Create first student with code
-    Student::factory()->create([
-        'name' => 'First Student',
-        'email' => 'first@test.com',
-        'code' => $sameCode,
-    ]);
-
-    // Try to create second student with same code in same business
-    // Should throw database exception due to unique constraint
-    expect(fn () => Student::factory()->create([
-        'name' => 'Second Student',
-        'email' => 'second@test.com',
-        'code' => $sameCode,
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 });
 
@@ -273,7 +205,6 @@ it('prevents changing business_id on update', function () {
     $student = Student::factory()->create([
         'name' => 'Student A',
         'email' => 'student-a@test.com',
-        'code' => 'STU-A-001',
     ]);
 
     $originalBusinessId = $student->business_id;
@@ -296,5 +227,4 @@ it('business_id is not in fillable array', function () {
     expect($student->getFillable())->not->toContain('business_id');
     expect($student->getFillable())->toContain('name');
     expect($student->getFillable())->toContain('email');
-    expect($student->getFillable())->toContain('code');
 });

@@ -15,7 +15,7 @@ class Student extends Model
     /** @use HasFactory<\Database\Factories\StudentFactory> */
     use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'email', 'code', 'phone'];
+    protected $fillable = ['name', 'email', 'phone'];
 
     protected $appends = ['level'];
 

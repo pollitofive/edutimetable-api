@@ -18,14 +18,12 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('name');
             $table->string('email');
-            $table->string('code');
             $table->string('phone')->nullable();
             $table->unsignedBigInteger('course_level_id');
             $table->timestamps();
 
-            // Composite unique constraints: email and code unique per business
+            // Composite unique constraint: email unique per business
             $table->unique(['business_id', 'email'], 'students_business_email_unique');
-            $table->unique(['business_id', 'code'], 'students_business_code_unique');
 
             // Composite index for efficient business_id + course_level_id lookups
             $table->index(['business_id', 'course_level_id'], 'students_business_course_level_index');

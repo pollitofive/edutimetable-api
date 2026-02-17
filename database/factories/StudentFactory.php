@@ -19,7 +19,6 @@ class StudentFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'code' => fake()->unique()->numerify('STU-#####'),
             'phone' => fake()->optional()->phoneNumber(),
             'course_level_id' => \App\Models\CourseLevel::factory(),
         ];
