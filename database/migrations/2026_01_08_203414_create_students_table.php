@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('code');
+            $table->string('phone')->nullable();
             $table->unsignedBigInteger('course_level_id');
             $table->timestamps();
 

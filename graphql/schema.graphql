@@ -87,6 +87,7 @@ type Teacher @model(class: "App\\Models\\Teacher") {
   id: ID!
   name: String!
   email: String!
+  phone: String
   courses: [Course!]! @belongsToMany(relation: "courses")
   schedules: [Schedule!]! @hasMany
   created_at: DateTime!
@@ -126,6 +127,7 @@ type Student @model(class: "App\\Models\\Student") {
   name: String!
   email: String!
   code: String!
+  phone: String
   level: String
   course_level_id: ID!
   courseLevel: CourseLevel @belongsTo(relation: "courseLevel")
@@ -188,11 +190,13 @@ enum StudentEnrollmentStatus {
 input CreateTeacherInput {
   name: String!
   email: String!
+  phone: String
 }
 
 input UpdateTeacherInput {
   name: String
   email: String
+  phone: String
 }
 
 input CreateCourseLevelInput {
@@ -227,6 +231,7 @@ input CreateStudentInput {
   name: String!
   email: String!
   code: String!
+  phone: String
   course_level_id: ID!
 }
 
@@ -234,6 +239,7 @@ input UpdateStudentInput {
   name: String
   email: String
   code: String
+  phone: String
   course_level_id: ID
 }
 

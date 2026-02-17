@@ -12,7 +12,7 @@ class Teacher extends Model
 {
     use BelongsToBusiness, HasFactory;
 
-    protected $fillable = ['name', 'email'];
+    protected $fillable = ['name', 'email', 'phone'];
 
     /**
      * Teacher has many schedules

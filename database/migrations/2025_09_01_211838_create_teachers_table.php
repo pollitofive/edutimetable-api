@@ -18,6 +18,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('name');
             $table->string('email');
+            $table->string('phone')->nullable();
             $table->timestamps();
 
             // Composite unique: email unique per business
