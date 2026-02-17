@@ -25,6 +25,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('day_of_week'); // 0..6 (Sun..Sat)
             $table->time('starts_at');
             $table->time('ends_at');
+            $table->unsignedInteger('capacity')->default(5);
             $table->timestamps();
 
             // Unique constraint: prevent duplicate schedules within business

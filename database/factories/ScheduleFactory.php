@@ -36,6 +36,7 @@ class ScheduleFactory extends Factory
             'starts_at' => sprintf('%02d:00:00', $start),
             'ends_at' => sprintf('%02d:00:00', $end),
             'description' => fake()->sentence(),
+            'capacity' => fake()->numberBetween(3, 15),
         ];
     }
 }

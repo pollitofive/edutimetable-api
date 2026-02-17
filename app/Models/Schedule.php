@@ -24,6 +24,7 @@ class Schedule extends Model
         'ends_at',
         'description',
         'group_id',
+        'capacity',
     ];
 
     /**
