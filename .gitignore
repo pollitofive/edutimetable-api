@@ -23,3 +23,8 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /documentation
+
+# Local AI dev tools
+.clauderules
+.mcp.json
+boost.json

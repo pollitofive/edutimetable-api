@@ -1,0 +1,61 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: edutimetable_app
+        volumes:
+            - ./:/var/www
+        networks:
+            - edutimetable
+
+
+    web:
+        image: nginx:latest
+        container_name: edutimetable_web
+        ports:
+            - "8001:80"  # expone en el host local para LAN
+        volumes:
+            - ./:/var/www
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
+        networks:
+            - edutimetable
+
+    db:
+        image: mysql:8.0
+        container_name: edutimetable_db
+        restart: always
+        environment:
+            MYSQL_DATABASE: edutimetable
+            MYSQL_USER: edutimetable
+            MYSQL_PASSWORD: secret
+            MYSQL_ROOT_PASSWORD: 123456
+        ports:
+            - "3306:3306"
+        volumes:
+            - db_data:/var/lib/mysql
+        networks:
+            - edutimetable
+
+    frontend:
+        build:
+            context: ../edutimetable-front
+            dockerfile: Dockerfile
+        container_name: edutimetable_vue_app
+        ports:
+            - "3537:3537"
+        volumes:
+            - ../edutimetable-front:/app
+            - /app/node_modules
+        networks:
+            - edutimetable
+        depends_on:
+            - app # Espera a que el backend esté listo
+
+networks:
+    edutimetable:
+
+volumes:
+    db_data:
