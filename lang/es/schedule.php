@@ -26,4 +26,15 @@ return [
         5 => 'Viernes',
         6 => 'Sábado',
     ],
+
+    // Short day names
+    'days_short' => [
+        0 => 'Dom',
+        1 => 'Lun',
+        2 => 'Mar',
+        3 => 'Mié',
+        4 => 'Jue',
+        5 => 'Vie',
+        6 => 'Sáb',
+    ],
 ];

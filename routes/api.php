@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EnrollmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+
+        // Enrollment REST API
+        Route::get('/enrollments/schedules', [EnrollmentController::class, 'schedules']);
+        Route::get('/schedules/{scheduleId}/eligible-students', [EnrollmentController::class, 'eligibleStudents']);
+        Route::get('/students/{studentId}/compatible-schedules', [EnrollmentController::class, 'compatibleSchedules']);
+        Route::get('/students', [EnrollmentController::class, 'students']);
+        Route::post('/enrollments', [EnrollmentController::class, 'store']);
+        Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
 
         // DEBUG: Endpoint to verify business context
         Route::get('/debug/business-context', function (Request $request) {
