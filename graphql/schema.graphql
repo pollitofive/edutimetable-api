@@ -157,7 +157,7 @@ type Schedule @model(class: "App\\Models\\Schedule") {
   day_of_week: Int!
   starts_at: String!
   ends_at: String!
-  description: String!
+  description: String
   group_id: String
   capacity: Int!
   enrollments: [StudentEnrollment!]! @hasMany
@@ -247,7 +247,7 @@ input CreateScheduleInput {
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
-  description: String!
+  description: String
   capacity: Int @rules(apply: ["integer", "min:1"])
 }
 
