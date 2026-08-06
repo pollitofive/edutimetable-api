@@ -22,6 +22,11 @@ services:
             - app
         networks:
             - edutimetable
+            - proxy
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.edutimetable-api.rule=Host(`${API_DOMAIN:-api.edutimetable.local.test}`)"
+            - "traefik.http.services.edutimetable-api.loadbalancer.server.port=80"
 
     db:
         image: mysql:8.0
@@ -51,11 +56,19 @@ services:
             - /app/node_modules
         networks:
             - edutimetable
+            - proxy
         depends_on:
             - app # Espera a que el backend esté listo
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.edutimetable.rule=Host(`${APP_DOMAIN:-edutimetable.local.test}`)"
+            - "traefik.http.services.edutimetable.loadbalancer.server.port=3537"
 
 networks:
     edutimetable:
+    proxy:
+        external: true
+        name: ${TRAEFIK_NETWORK:-proxy}
 
 volumes:
     db_data:
