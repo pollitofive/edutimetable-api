@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\CourseLevel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CourseLevel>
+ * @extends Factory<CourseLevel>
  */
 class CourseLevelFactory extends Factory
 {
@@ -16,7 +17,6 @@ class CourseLevelFactory extends Factory
      */
     public function definition(): array
     {
-        $tracks = ['English', 'Portuguese', 'Spanish', 'French'];
         $levels = [
             ['name' => 'Beginner', 'slug' => 'beginner', 'sort_order' => 10],
             ['name' => 'Pre-Intermediate', 'slug' => 'pre-intermediate', 'sort_order' => 20],
@@ -29,7 +29,7 @@ class CourseLevelFactory extends Factory
         $uniqueSuffix = $this->faker->unique()->numerify('###');
 
         return [
-            'track' => $this->faker->randomElement($tracks),
+            'track_id' => \App\Models\Track::factory(),
             'name' => $level['name'],
             'slug' => $level['slug'].'-'.$uniqueSuffix,
             'sort_order' => $level['sort_order'],

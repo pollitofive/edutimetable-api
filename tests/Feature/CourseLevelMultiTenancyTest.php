@@ -2,6 +2,7 @@
 
 use App\Models\Business;
 use App\Models\CourseLevel;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\CurrentBusiness;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,7 +36,7 @@ it('isolates course levels list by business scope', function () {
 
     // Create course level in business A
     $levelA = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Beginner A',
         'slug' => 'beginner-a',
         'sort_order' => 10,
@@ -46,7 +47,7 @@ it('isolates course levels list by business scope', function () {
 
     // Create course level in business B
     $levelB = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Beginner B',
         'slug' => 'beginner-b',
         'sort_order' => 10,
@@ -74,8 +75,9 @@ it('automatically sets business_id when creating course level', function () {
     app(CurrentBusiness::class)->setId($this->businessA->id);
 
     // Create course level without specifying business_id
+    $track = Track::factory()->create(['name' => 'English']);
     $level = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Intermediate',
         'slug' => 'intermediate',
         'sort_order' => 20,
@@ -91,7 +93,7 @@ it('automatically sets business_id when creating course level', function () {
     $this->assertDatabaseHas('course_levels', [
         'id' => $level->id,
         'business_id' => $this->businessA->id,
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Intermediate',
     ]);
 });
@@ -100,7 +102,7 @@ it('prevents updating course level from different business (cross-tenant protect
     // Create course level in business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $levelA = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Advanced A',
         'slug' => 'advanced-a',
         'sort_order' => 30,
@@ -129,7 +131,7 @@ it('prevents deleting course level from different business (cross-tenant protect
     // Create course level in business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $levelA = CourseLevel::factory()->create([
-        'track' => 'Portuguese',
+        'track_id' => Track::factory()->create(['name' => 'Portuguese'])->id,
         'name' => 'Upper A',
         'slug' => 'upper-a',
         'sort_order' => 40,
@@ -162,7 +164,7 @@ it('allows same slug in different businesses (unique per business and track)', f
     // Create course level in business A with slug
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $levelA = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Beginner A',
         'slug' => $sameSlug,
         'sort_order' => 10,
@@ -171,7 +173,7 @@ it('allows same slug in different businesses (unique per business and track)', f
     // Create course level in business B with same slug - should succeed
     app(CurrentBusiness::class)->setId($this->businessB->id);
     $levelB = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Beginner B',
         'slug' => $sameSlug,
         'sort_order' => 10,
@@ -200,9 +202,11 @@ it('prevents duplicate slug within same business and track', function () {
     // Set context to business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
 
+    $track = Track::factory()->create(['name' => 'English']);
+
     // Create first course level with slug
     CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Intermediate',
         'slug' => $sameSlug,
         'sort_order' => 20,
@@ -211,7 +215,7 @@ it('prevents duplicate slug within same business and track', function () {
     // Try to create second course level with same slug in same business and track
     // Should throw database exception due to unique constraint
     expect(fn () => CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Intermediate 2',
         'slug' => $sameSlug,
         'sort_order' => 21,
@@ -222,7 +226,7 @@ it('prevents changing business_id on update', function () {
     // Create course level in business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $level = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => Track::factory()->create(['name' => 'English'])->id,
         'name' => 'Pre-Intermediate',
         'slug' => 'pre-intermediate',
         'sort_order' => 15,
@@ -246,7 +250,7 @@ it('business_id is not in fillable array', function () {
     $level = new CourseLevel;
 
     expect($level->getFillable())->not->toContain('business_id');
-    expect($level->getFillable())->toContain('track');
+    expect($level->getFillable())->toContain('track_id');
     expect($level->getFillable())->toContain('name');
     expect($level->getFillable())->toContain('slug');
     expect($level->getFillable())->toContain('sort_order');
@@ -258,15 +262,17 @@ it('business_id is not in fillable array', function () {
 it('allows setting next_level_id but should validate at app level', function () {
     // Create two levels in business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
+    $track = Track::factory()->create(['name' => 'English']);
+
     $levelA1 = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Beginner',
         'slug' => 'beginner',
         'sort_order' => 10,
     ]);
 
     $levelA2 = CourseLevel::factory()->create([
-        'track' => 'English',
+        'track_id' => $track->id,
         'name' => 'Intermediate',
         'slug' => 'intermediate',
         'sort_order' => 20,

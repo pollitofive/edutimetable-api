@@ -41,10 +41,10 @@ class Student extends Model
     /**
      * Scope to filter students by the track of their courseLevel
      */
-    public function scopeByTrack(Builder $query, string $track): Builder
+    public function scopeByTrack(Builder $query, int $trackId): Builder
     {
-        return $query->whereHas('courseLevel', function (Builder $q) use ($track) {
-            $q->where('track', $track);
+        return $query->whereHas('courseLevel', function (Builder $q) use ($trackId) {
+            $q->where('track_id', $trackId);
         });
     }
 

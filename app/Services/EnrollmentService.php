@@ -14,9 +14,9 @@ class EnrollmentService
     public function getSchedules(array $filters = []): Collection
     {
         $query = Schedule::with([
-            'course.courseLevel',
+            'course.courseLevel.track',
             'teacher',
-            'enrollments' => fn ($q) => $q->where('status', 'active')->with('student.courseLevel'),
+            'enrollments' => fn ($q) => $q->where('status', 'active')->with('student.courseLevel.track'),
         ])->withCount([
             'enrollments as enrolled_count' => fn ($q) => $q->where('status', 'active'),
         ]);
@@ -33,8 +33,8 @@ class EnrollmentService
             $query->whereIn('day_of_week', array_map('intval', (array) $filters['days_of_week']));
         }
 
-        if (! empty($filters['tracks'])) {
-            $query->whereHas('course.courseLevel', fn ($q) => $q->whereIn('track', (array) $filters['tracks']));
+        if (! empty($filters['track_ids'])) {
+            $query->whereHas('course.courseLevel', fn ($q) => $q->whereIn('track_id', (array) $filters['track_ids']));
         }
 
         return $query->get()->map(fn ($s) => $this->formatSchedule($s));
@@ -42,16 +42,16 @@ class EnrollmentService
 
     public function getEligibleStudents(int $scheduleId, string $search = ''): array
     {
-        $schedule = Schedule::with('course.courseLevel')->findOrFail($scheduleId);
-        $track = $schedule->course->courseLevel->track;
+        $schedule = Schedule::with('course.courseLevel.track')->findOrFail($scheduleId);
+        $trackId = $schedule->course->courseLevel->track_id;
 
         $enrolledIds = StudentEnrollment::where('schedule_id', $scheduleId)
             ->where('status', 'active')
             ->pluck('student_id')
             ->toArray();
 
-        $students = Student::with(['courseLevel', 'availabilities'])
-            ->whereHas('courseLevel', fn ($q) => $q->where('track', $track))
+        $students = Student::with(['courseLevel.track', 'availabilities'])
+            ->whereHas('courseLevel', fn ($q) => $q->where('track_id', $trackId))
             ->when($search !== '', fn ($q) => $q->search($search))
             ->orderBy('name')
             ->get();
@@ -68,7 +68,7 @@ class EnrollmentService
                 'is_available' => $isAvailable,
                 'course_level' => $student->courseLevel ? [
                     'name' => $student->courseLevel->name,
-                    'track' => $student->courseLevel->track,
+                    'track' => ['id' => $student->courseLevel->track->id, 'name' => $student->courseLevel->track->name],
                 ] : null,
             ];
         })->values()->toArray();
@@ -76,7 +76,7 @@ class EnrollmentService
 
     public function getCompatibleSchedules(int $studentId): array
     {
-        $student = Student::with(['courseLevel', 'availabilities'])->findOrFail($studentId);
+        $student = Student::with(['courseLevel.track', 'availabilities'])->findOrFail($studentId);
 
         if (! $student->course_level_id) {
             return ['student' => $this->formatStudent($student), 'schedule_groups' => []];
@@ -100,7 +100,7 @@ class EnrollmentService
 
     public function searchStudents(string $search = ''): Collection
     {
-        return Student::with('courseLevel')
+        return Student::with('courseLevel.track')
             ->when($search !== '', fn ($q) => $q->search($search))
             ->orderBy('name')
             ->limit(20)
@@ -112,7 +112,7 @@ class EnrollmentService
                 'phone' => $s->phone,
                 'course_level' => $s->courseLevel ? [
                     'name' => $s->courseLevel->name,
-                    'track' => $s->courseLevel->track,
+                    'track' => ['id' => $s->courseLevel->track->id, 'name' => $s->courseLevel->track->name],
                 ] : null,
             ]);
     }
@@ -179,7 +179,7 @@ class EnrollmentService
                 'name' => $schedule->course->name,
                 'course_level' => [
                     'id' => $schedule->course->courseLevel->id,
-                    'track' => $schedule->course->courseLevel->track,
+                    'track' => ['id' => $schedule->course->courseLevel->track->id, 'name' => $schedule->course->courseLevel->track->name],
                     'name' => $schedule->course->courseLevel->name,
                 ],
             ],
@@ -195,7 +195,7 @@ class EnrollmentService
                     'email' => $e->student->email,
                     'course_level' => $e->student->courseLevel ? [
                         'name' => $e->student->courseLevel->name,
-                        'track' => $e->student->courseLevel->track,
+                        'track' => ['id' => $e->student->courseLevel->track->id, 'name' => $e->student->courseLevel->track->name],
                     ] : null,
                 ],
                 'status' => $e->status,
@@ -212,7 +212,7 @@ class EnrollmentService
             'phone' => $student->phone,
             'course_level' => $student->courseLevel ? [
                 'name' => $student->courseLevel->name,
-                'track' => $student->courseLevel->track,
+                'track' => ['id' => $student->courseLevel->track->id, 'name' => $student->courseLevel->track->name],
             ] : null,
             'availabilities' => $student->availabilities
                 ->sortBy('day_of_week')

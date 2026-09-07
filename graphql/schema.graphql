@@ -6,9 +6,10 @@ type Query {
   me: User @guard @auth
   myBusinesses: [BusinessMembership!]! @guard @field(resolver: "App\\GraphQL\\Queries\\MyBusinesses@__invoke")
   teachers(name: String @where(operator: "like"), email: String @where(operator: "like")): [Teacher!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  courseLevels(name: String @where(operator: "like"), track: String @where, sort_order: Int @where): [CourseLevel!]! @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
-  courses(name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  students(search: String @scope(name: "search"), course_level_id: ID @where, track: String @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  tracks(name: String @where(operator: "like")): [Track!]! @paginate(defaultCount: 10) @orderBy(column: "name", direction: ASC)
+  courseLevels(name: String @where(operator: "like"), track_id: ID @where, sort_order: Int @where): [CourseLevel!]! @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
+  courses(name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  students(search: String @scope(name: "search"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where(operator: "like"), group_id: String @where(operator: "like"), starts_at_from: String @scope(name: "startsAtFrom"), starts_at_to: String @scope(name: "startsAtTo")): [Schedule!]! @paginate(defaultCount: 20)
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
@@ -24,8 +25,17 @@ type Mutation {
     updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
     deleteTeacher(id: ID! @eq): Teacher @guard @delete
 
-    createCourseLevel(input: CreateCourseLevelInput! @spread): CourseLevel @guard @create
-    updateCourseLevel(id: ID!, input: UpdateCourseLevelInput! @spread): CourseLevel @guard @update
+    createTrack(input: CreateTrackInput! @spread): Track @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateTrack@__invoke")
+    updateTrack(id: ID!, input: UpdateTrackInput! @spread): Track @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateTrack@__invoke")
+    deleteTrack(id: ID!): Track @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\DeleteTrack@__invoke")
+
+    createCourseLevel(input: CreateCourseLevelInput! @spread): CourseLevel @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateCourseLevel@__invoke")
+    updateCourseLevel(id: ID!, input: UpdateCourseLevelInput! @spread): CourseLevel @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateCourseLevel@__invoke")
     deleteCourseLevel(id: ID! @eq): CourseLevel @guard @delete
 
     createCourse(input: CreateCourseInput! @spread): Course @guard @create
@@ -94,10 +104,20 @@ type Teacher @model(class: "App\\Models\\Teacher") {
   updated_at: DateTime!
 }
 
+type Track @model(class: "App\\Models\\Track") {
+  id: ID!
+  business_id: ID!
+  name: String!
+  courseLevels: [CourseLevel!]! @hasMany
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type CourseLevel @model(class: "App\\Models\\CourseLevel") {
   id: ID!
   business_id: ID!
-  track: String!
+  track_id: ID!
+  track: Track! @belongsTo(relation: "track")
   name: String!
   slug: String!
   sort_order: Int!
@@ -199,8 +219,17 @@ input UpdateTeacherInput {
   phone: String
 }
 
+input CreateTrackInput {
+  name: String!
+}
+
+input UpdateTrackInput {
+  name: String
+}
+
 input CreateCourseLevelInput {
-  track: String!
+  track_id: ID
+  track_name: String
   name: String!
   slug: String!
   sort_order: Int!
@@ -209,7 +238,8 @@ input CreateCourseLevelInput {
 }
 
 input UpdateCourseLevelInput {
-  track: String
+  track_id: ID
+  track_name: String
   name: String
   slug: String
   sort_order: Int

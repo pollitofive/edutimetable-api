@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\StudentAvailability;
 use App\Models\StudentEnrollment;
 use App\Models\Teacher;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\CurrentBusiness;
 use Illuminate\Database\Seeder;
@@ -29,12 +30,14 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Advanced',           'slug' => 'advanced',          'sort_order' => 50],
         ];
 
+        $trackModels = collect($tracks)->mapWithKeys(fn ($name) => [$name => Track::create(['name' => $name])]);
+
         $courseLevels = [];
 
         foreach ($tracks as $track) {
             foreach ($levels as $level) {
                 $courseLevels[$track][$level['slug']] = CourseLevel::create([
-                    'track'         => $track,
+                    'track_id'      => $trackModels[$track]->id,
                     'name'          => $level['name'],
                     'slug'          => $level['slug'],
                     'sort_order'    => $level['sort_order'],
@@ -248,10 +251,10 @@ class DatabaseSeeder extends Seeder
         $enrolledPerGroup = []; // group_id => number of students enrolled
 
         foreach ($students as $student) {
-            $studentTrack = $student->courseLevel->track ?? null;
+            $studentTrackId = $student->courseLevel->track_id ?? null;
 
-            $matchingSchedules = $studentTrack
-                ? $schedules->filter(fn ($s) => $s->course->courseLevel->track === $studentTrack)
+            $matchingSchedules = $studentTrackId
+                ? $schedules->filter(fn ($s) => $s->course->courseLevel->track_id === $studentTrackId)
                 : $schedules;
 
             $pool = $matchingSchedules->count() >= 3 ? $matchingSchedules : $schedules;

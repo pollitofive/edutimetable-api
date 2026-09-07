@@ -13,13 +13,18 @@ class CourseLevel extends Model
     use BelongsToBusiness, HasFactory;
 
     protected $fillable = [
-        'track',
+        'track_id',
         'name',
         'slug',
         'sort_order',
         'next_level_id',
         'texts',
     ];
+
+    public function track(): BelongsTo
+    {
+        return $this->belongsTo(Track::class);
+    }
 
     public function nextLevel(): BelongsTo
     {

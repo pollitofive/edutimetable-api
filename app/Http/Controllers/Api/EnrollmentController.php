@@ -17,7 +17,7 @@ class EnrollmentController extends Controller
     public function schedules(Request $request): JsonResponse
     {
         $schedules = $this->service->getSchedules(
-            $request->only(['course_ids', 'teacher_ids', 'days_of_week', 'tracks'])
+            $request->only(['course_ids', 'teacher_ids', 'days_of_week', 'track_ids'])
         );
 
         return response()->json($schedules);
