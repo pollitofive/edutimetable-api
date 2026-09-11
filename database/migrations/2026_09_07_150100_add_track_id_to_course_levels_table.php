@@ -27,7 +27,7 @@ return new class extends Migration
             $table->unique(['business_id', 'track_id', 'slug'], 'course_levels_business_track_id_slug_unique');
             $table->index(['business_id', 'track_id', 'sort_order'], 'course_levels_business_track_id_sort_index');
 
-            // Simple FK, same pattern as next_level_id — cross-tenant check done at app level.
+            // Simple FK, same pattern as previous_level_id — cross-tenant check done at app level.
             $table->foreign('track_id')
                 ->references('id')->on('tracks')
                 ->onDelete('restrict')->onUpdate('restrict');

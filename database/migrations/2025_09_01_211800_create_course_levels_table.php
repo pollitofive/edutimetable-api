@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('slug');        // beginner...
             $table->unsignedInteger('sort_order'); // 10, 20, 30...
 
-            $table->unsignedBigInteger('next_level_id')->nullable();
+            $table->unsignedBigInteger('previous_level_id')->nullable();
 
             $table->text('texts')->nullable();
 
@@ -36,8 +36,8 @@ return new class extends Migration
                 ->references('id')->on('businesses')
                 ->onDelete('cascade')->onUpdate('restrict');
 
-            // Simple FK on next_level_id - cross-tenant check will be done at app level
-            $table->foreign('next_level_id')
+            // Simple FK on previous_level_id - cross-tenant check will be done at app level
+            $table->foreign('previous_level_id')
                 ->references('id')->on('course_levels')
                 ->onDelete('set null')->onUpdate('restrict');
         });

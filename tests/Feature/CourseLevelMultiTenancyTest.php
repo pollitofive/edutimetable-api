@@ -254,12 +254,12 @@ it('business_id is not in fillable array', function () {
     expect($level->getFillable())->toContain('name');
     expect($level->getFillable())->toContain('slug');
     expect($level->getFillable())->toContain('sort_order');
-    expect($level->getFillable())->toContain('next_level_id');
+    expect($level->getFillable())->toContain('previous_level_id');
 });
 
-// NOTE: Cross-tenant validation for next_level_id should be done at application level
+// NOTE: Cross-tenant validation for previous_level_id should be done at application level
 // Database-level composite FK constraints are not reliable across MySQL and SQLite
-it('allows setting next_level_id but should validate at app level', function () {
+it('allows setting previous_level_id but should validate at app level', function () {
     // Create two levels in business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
     $track = Track::factory()->create(['name' => 'English']);
@@ -278,10 +278,10 @@ it('allows setting next_level_id but should validate at app level', function () 
         'sort_order' => 20,
     ]);
 
-    // Setting next_level_id within same business should work
-    $levelA1->update(['next_level_id' => $levelA2->id]);
-    expect($levelA1->fresh()->next_level_id)->toBe($levelA2->id);
+    // Setting previous_level_id within same business should work
+    $levelA2->update(['previous_level_id' => $levelA1->id]);
+    expect($levelA2->fresh()->previous_level_id)->toBe($levelA1->id);
 
-    // Note: Validation to prevent cross-tenant next_level_id assignment
+    // Note: Validation to prevent cross-tenant previous_level_id assignment
     // should be implemented in the application layer (controller/service)
 });

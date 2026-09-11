@@ -41,7 +41,7 @@ class DatabaseSeeder extends Seeder
                     'name'          => $level['name'],
                     'slug'          => $level['slug'],
                     'sort_order'    => $level['sort_order'],
-                    'next_level_id' => null,
+                    'previous_level_id' => null,
                 ]);
             }
         }

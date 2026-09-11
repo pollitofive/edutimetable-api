@@ -17,7 +17,7 @@ class CourseLevel extends Model
         'name',
         'slug',
         'sort_order',
-        'next_level_id',
+        'previous_level_id',
         'texts',
     ];
 
@@ -26,9 +26,9 @@ class CourseLevel extends Model
         return $this->belongsTo(Track::class);
     }
 
-    public function nextLevel(): BelongsTo
+    public function previousLevel(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'next_level_id');
+        return $this->belongsTo(self::class, 'previous_level_id');
     }
 
     public function courses(): HasMany
