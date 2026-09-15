@@ -24,7 +24,7 @@ class StudentAvailabilityFactory extends Factory
 
         return [
             'student_id' => Student::factory(),
-            'day_of_week' => fake()->numberBetween(0, 6), // 0=Monday, 6=Sunday
+            'day_of_week' => fake()->numberBetween(0, 6), // 0=Sunday, 6=Saturday
             'start_time' => sprintf('%02d:%s', $startHour, $startMinute),
             'end_time' => sprintf('%02d:%s', min($endHour, 20), $endMinute),
         ];
