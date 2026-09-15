@@ -2,6 +2,8 @@
 
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\Student;
+use App\Models\StudentEnrollment;
 use App\Models\Teacher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Nuwave\Lighthouse\Testing\MakesGraphQLRequests;
@@ -633,6 +635,76 @@ describe('Bulk Update Schedules', function () {
 
         // Other course should still have 2 schedules (unchanged)
         expect(Schedule::where('course_id', $otherCourse->id)->count())->toBe(2);
+    });
+
+    test('preserves student enrollments when a group schedule changes', function () {
+        // Existing group with a student enrolled in both slots (as createEnrollments does)
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        $oldSchedule1 = Schedule::factory()->create([
+            'course_id' => $this->course->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 1,
+            'starts_at' => '10:00:00',
+            'ends_at' => '12:00:00',
+            'group_id' => $groupId,
+        ]);
+        $oldSchedule2 = Schedule::factory()->create([
+            'course_id' => $this->course->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 3,
+            'starts_at' => '10:00:00',
+            'ends_at' => '12:00:00',
+            'group_id' => $groupId,
+        ]);
+
+        $student = Student::factory()->create();
+        StudentEnrollment::factory()->create([
+            'student_id' => $student->id,
+            'schedule_id' => $oldSchedule1->id,
+            'status' => 'active',
+            'notes' => 'Needs extra help',
+        ]);
+        StudentEnrollment::factory()->create([
+            'student_id' => $student->id,
+            'schedule_id' => $oldSchedule2->id,
+            'status' => 'active',
+            'notes' => 'Needs extra help',
+        ]);
+
+        // Professor moves the whole course to a new time (still 2 days a week)
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertJsonMissingPath('errors');
+
+        // Old schedules are gone
+        expect(Schedule::whereIn('id', [$oldSchedule1->id, $oldSchedule2->id])->count())->toBe(0);
+
+        $newSchedules = Schedule::where('group_id', $groupId)->get();
+        expect($newSchedules)->toHaveCount(2);
+
+        // The student is re-enrolled in both new schedule slots, preserving status/notes
+        $enrollments = StudentEnrollment::where('student_id', $student->id)->get();
+        expect($enrollments)->toHaveCount(2);
+        expect($enrollments->pluck('schedule_id')->sort()->values()->all())
+            ->toBe($newSchedules->pluck('id')->sort()->values()->all());
+        foreach ($enrollments as $enrollment) {
+            expect($enrollment->status)->toBe('active');
+            expect($enrollment->notes)->toBe('Needs extra help');
+        }
     });
 
     test('can set description on bulk create', function () {

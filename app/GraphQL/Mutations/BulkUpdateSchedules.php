@@ -5,6 +5,7 @@ namespace App\GraphQL\Mutations;
 use App\GraphQL\Validators\Concerns\ValidatesScheduleOverlaps;
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\StudentEnrollment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -43,13 +44,22 @@ class BulkUpdateSchedules
         $this->validateSchedules($course->id, $schedules, $groupId);
 
         $createdSchedules = DB::transaction(function () use ($course, $description, $groupId, $schedules) {
-            // If group_id is provided, delete schedules with that group_id
-            // Otherwise, delete all schedules for this course (backward compatibility)
-            if ($groupId) {
-                Schedule::where('group_id', $groupId)->delete();
-            } else {
-                Schedule::where('course_id', $course->id)->delete();
-            }
+            // If group_id is provided, replace schedules with that group_id
+            // Otherwise, replace all schedules for this course (backward compatibility)
+            $oldSchedulesQuery = $groupId
+                ? Schedule::where('group_id', $groupId)
+                : Schedule::where('course_id', $course->id);
+
+            $oldScheduleIds = $oldSchedulesQuery->pluck('id');
+
+            // Capture one enrollment per enrolled student before the old schedules
+            // (and their enrollments, via cascadeOnDelete) are removed, so we can
+            // re-enroll them in the new schedules below.
+            $enrollmentsToRestore = StudentEnrollment::whereIn('schedule_id', $oldScheduleIds)
+                ->get()
+                ->unique('student_id');
+
+            Schedule::whereIn('id', $oldScheduleIds)->delete();
 
             // Use existing group_id or generate a new one
             $finalGroupId = $groupId ?? (string) Str::uuid();
@@ -62,17 +72,29 @@ class BulkUpdateSchedules
                 $endsAt = $this->normalizeTime($schedule['ends_at']);
 
                 // Create schedule with teacher_id, description, and group_id
-                $created->push(
-                    Schedule::create([
-                        'course_id' => $course->id,
-                        'teacher_id' => (int) $schedule['teacher_id'],
-                        'day_of_week' => (int) $schedule['day_of_week'],
-                        'starts_at' => $startsAt,
-                        'ends_at' => $endsAt,
-                        'description' => $description,
-                        'group_id' => $finalGroupId,
-                    ])
-                );
+                $newSchedule = Schedule::create([
+                    'course_id' => $course->id,
+                    'teacher_id' => (int) $schedule['teacher_id'],
+                    'day_of_week' => (int) $schedule['day_of_week'],
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
+                    'description' => $description,
+                    'group_id' => $finalGroupId,
+                ]);
+
+                $created->push($newSchedule);
+
+                // Re-enroll each previously enrolled student in the new schedule slot,
+                // preserving their status/notes/enrolled_at instead of losing the enrollment.
+                foreach ($enrollmentsToRestore as $enrollment) {
+                    StudentEnrollment::create([
+                        'student_id' => $enrollment->student_id,
+                        'schedule_id' => $newSchedule->id,
+                        'enrolled_at' => $enrollment->enrolled_at,
+                        'status' => $enrollment->status,
+                        'notes' => $enrollment->notes,
+                    ]);
+                }
             }
 
             return $created;
