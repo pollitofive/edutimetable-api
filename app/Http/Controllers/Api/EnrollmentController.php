@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEnrollmentRequest;
+use App\Http\Requests\UpdateEnrollmentRequest;
 use App\Models\StudentEnrollment;
 use App\Services\EnrollmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class EnrollmentController extends Controller
@@ -49,6 +51,20 @@ class EnrollmentController extends Controller
         return response()->json($students);
     }
 
+    public function index(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'student_id' => ['nullable', 'integer'],
+            'schedule_id' => ['nullable', 'integer'],
+            'status' => ['nullable', Rule::in(['active', 'completed', 'dropped', 'pending'])],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $enrollments = $this->service->getEnrollments($validated, (int) ($validated['per_page'] ?? 10));
+
+        return response()->json($enrollments);
+    }
+
     public function store(StoreEnrollmentRequest $request): JsonResponse
     {
         try {
@@ -64,6 +80,13 @@ class EnrollmentController extends Controller
         }
 
         return response()->json($enrollments, 201);
+    }
+
+    public function update(UpdateEnrollmentRequest $request, int $id): JsonResponse
+    {
+        $enrollment = $this->service->updateEnrollment($id, $request->validated());
+
+        return response()->json($enrollment);
     }
 
     public function destroy(int $id): JsonResponse

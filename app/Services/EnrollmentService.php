@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -115,6 +116,34 @@ class EnrollmentService
                     'track' => ['id' => $s->courseLevel->track->id, 'name' => $s->courseLevel->track->name],
                 ] : null,
             ]);
+    }
+
+    public function getEnrollments(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        $query = StudentEnrollment::with(['student', 'schedule.course', 'schedule.teacher'])
+            ->orderByDesc('created_at');
+
+        if (! empty($filters['student_id'])) {
+            $query->where('student_id', $filters['student_id']);
+        }
+
+        if (! empty($filters['schedule_id'])) {
+            $query->where('schedule_id', $filters['schedule_id']);
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->paginate($perPage);
+    }
+
+    public function updateEnrollment(int $id, array $data): StudentEnrollment
+    {
+        $enrollment = StudentEnrollment::with(['student', 'schedule.course', 'schedule.teacher'])->findOrFail($id);
+        $enrollment->update($data);
+
+        return $enrollment->fresh(['student', 'schedule.course', 'schedule.teacher']);
     }
 
     public function createEnrollments(int $studentId, array $scheduleIds): array
