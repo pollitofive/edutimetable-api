@@ -89,6 +89,20 @@ class EnrollmentController extends Controller
         return response()->json($enrollment);
     }
 
+    public function drop(int $id): JsonResponse
+    {
+        try {
+            $dropped = $this->service->dropEnrollment($id);
+        } catch (ValidationException $e) {
+            return response()->json(
+                ['message' => collect($e->errors())->flatten()->first()],
+                422
+            );
+        }
+
+        return response()->json(['dropped' => $dropped]);
+    }
+
     public function destroy(int $id): JsonResponse
     {
         // BelongsToBusiness global scope ensures only enrollments from the

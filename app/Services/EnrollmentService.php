@@ -181,12 +181,49 @@ class EnrollmentService
             ]);
         }
 
+        // A previous enrollment (e.g. dropped) is reactivated instead of
+        // inserting a new row, since (business, student, schedule) is unique.
+        $existing = StudentEnrollment::where('student_id', $studentId)
+            ->where('schedule_id', $scheduleId)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['status' => 'active', 'enrolled_at' => now()]);
+
+            return $existing;
+        }
+
         return StudentEnrollment::create([
             'student_id' => $studentId,
             'schedule_id' => $scheduleId,
             'enrolled_at' => now(),
             'status' => 'active',
         ]);
+    }
+
+    /**
+     * Drops the student from the whole schedule group the given enrollment
+     * belongs to (every day of the group), keeping the rows as history.
+     */
+    public function dropEnrollment(int $id): int
+    {
+        $enrollment = StudentEnrollment::with('schedule')->findOrFail($id);
+
+        if ($enrollment->status !== 'active') {
+            throw ValidationException::withMessages([
+                'status' => __('enrollment.not_active'),
+            ]);
+        }
+
+        $groupId = $enrollment->schedule->group_id;
+        $scheduleIds = $groupId
+            ? Schedule::where('group_id', $groupId)->pluck('id')
+            : collect([$enrollment->schedule_id]);
+
+        return StudentEnrollment::where('student_id', $enrollment->student_id)
+            ->whereIn('schedule_id', $scheduleIds)
+            ->where('status', 'active')
+            ->update(['status' => 'dropped']);
     }
 
     private function formatSchedule(Schedule $schedule): array
