@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/enrollments', [EnrollmentController::class, 'index']);
         Route::post('/enrollments', [EnrollmentController::class, 'store']);
         Route::patch('/enrollments/{id}', [EnrollmentController::class, 'update']);
+        Route::post('/enrollments/{id}/drop', [EnrollmentController::class, 'drop']);
         Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
 
         // DEBUG: Endpoint to verify business context
