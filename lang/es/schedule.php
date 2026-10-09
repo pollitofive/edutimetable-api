@@ -8,6 +8,10 @@ return [
     'teacher_overlap_db' => 'Horario #:slot (:day :start-:end): El profesor ya tiene un horario de :existing_start a :existing_end.',
     'teacher_overlap_db_other_course' => 'Horario #:slot (:day :start-:end): El profesor ya tiene un horario de :existing_start a :existing_end para otro curso.',
     'teacher_conflict_slots' => 'Horario #:slot1 (:day1 :start1-:end1): Conflicto de profesor con el horario #:slot2 (:day2 :start2-:end2).',
+    'slot_not_in_group' => 'Horario #:slot: no pertenece al curso que se está editando.',
+    'locked_slots' => 'El curso tiene :count alumnos inscriptos: no se pueden agregar ni quitar horarios. Para cambiar el horario usá el simulador en Inscripciones.',
+    'locked_time' => 'Horario #:slot (:day :start-:end): el curso tiene :count alumnos inscriptos, no se puede cambiar el día ni el horario. Usá el simulador en Inscripciones.',
+    'capacity_below_enrolled' => 'La capacidad (:capacity) no puede ser menor a la cantidad de alumnos inscriptos (:enrolled).',
 
     // Single operations (ScheduleService)
     'course_not_exists' => 'El curso no existe o no pertenece al negocio actual.',
@@ -15,6 +19,9 @@ return [
     'starts_before_ends' => 'La hora de inicio debe ser anterior a la hora de fin.',
     'teacher_overlap' => 'El profesor ya tiene un horario en este horario en este día.',
     'course_overlap' => 'El curso ya tiene un horario en este horario en este día.',
+    'delete_with_students' => 'Este horario tiene :count alumnos inscriptos, no se puede eliminar. Primero quitalos del curso desde Inscripciones.',
+    'delete_group_with_students' => 'El curso tiene :count alumnos inscriptos, no se puede eliminar. Primero quitalos del curso desde Inscripciones.',
+    'locked_time_single' => 'Este horario tiene :count alumnos inscriptos, no se puede cambiar el día ni el horario. Usá el simulador en Inscripciones.',
 
     // Days of week
     'days' => [

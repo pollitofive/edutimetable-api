@@ -25,6 +25,7 @@ class BulkCreateSchedules
     {
         $courseId = (int) $args['course_id'];
         $description = $args['description']; // Required field
+        $capacity = $args['capacity'] ?? null; // Optional - column defaults to 5
         $schedules = $args['schedules'];
 
         // Validate at least one schedule is provided
@@ -40,7 +41,7 @@ class BulkCreateSchedules
         // Validate all slots before processing
         $this->validateSchedules($course->id, $schedules);
 
-        $createdSchedules = DB::transaction(function () use ($course, $description, $schedules) {
+        $createdSchedules = DB::transaction(function () use ($course, $description, $capacity, $schedules) {
             $created = collect();
 
             // Generate a single UUID for all schedules in this batch
@@ -52,17 +53,21 @@ class BulkCreateSchedules
                 $endsAt = $this->normalizeTime($schedule['ends_at']);
 
                 // Create schedule with teacher_id, description, and group_id
-                $created->push(
-                    Schedule::create([
-                        'course_id' => $course->id,
-                        'teacher_id' => (int) $schedule['teacher_id'],
-                        'day_of_week' => (int) $schedule['day_of_week'],
-                        'starts_at' => $startsAt,
-                        'ends_at' => $endsAt,
-                        'description' => $description,
-                        'group_id' => $groupId,
-                    ])
-                );
+                $attributes = [
+                    'course_id' => $course->id,
+                    'teacher_id' => (int) $schedule['teacher_id'],
+                    'day_of_week' => (int) $schedule['day_of_week'],
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
+                    'description' => $description,
+                    'group_id' => $groupId,
+                ];
+
+                if ($capacity !== null) {
+                    $attributes['capacity'] = (int) $capacity;
+                }
+
+                $created->push(Schedule::create($attributes));
             }
 
             return $created;

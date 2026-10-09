@@ -5,7 +5,7 @@ namespace App\GraphQL\Mutations;
 use App\GraphQL\Validators\Concerns\ValidatesScheduleOverlaps;
 use App\Models\Course;
 use App\Models\Schedule;
-use App\Models\StudentEnrollment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -15,7 +15,13 @@ class BulkUpdateSchedules
     use ValidatesScheduleOverlaps;
 
     /**
-     * Replace all course schedules with new ones
+     * Sync a course's schedules with the given slots, in place: slots with an id update
+     * that schedule, slots without one are created, and existing schedules left out are
+     * deleted. Schedules are never deleted and recreated, so student_enrollments (which
+     * cascade on delete) are preserved.
+     *
+     * Once the group has active students, day/time changes and adding/removing slots are
+     * rejected: moving a course with students goes through the schedule change simulator.
      *
      * @param  null  $_
      * @return \Illuminate\Support\Collection
@@ -26,6 +32,7 @@ class BulkUpdateSchedules
     {
         $courseId = (int) $args['course_id'];
         $description = $args['description']; // Required field
+        $capacity = isset($args['capacity']) ? (int) $args['capacity'] : null;
         $groupId = $args['group_id'] ?? null; // Optional - sent by frontend for updates
         $schedules = $args['schedules'];
 
@@ -39,68 +46,124 @@ class BulkUpdateSchedules
         // Verify course exists
         $course = Course::findOrFail($courseId);
 
+        // If group_id is provided, sync schedules with that group_id
+        // Otherwise, sync all schedules for this course (backward compatibility)
+        $existing = ($groupId
+            ? Schedule::where('group_id', $groupId)
+            : Schedule::where('course_id', $course->id))
+            ->withCount('activeEnrollments')
+            ->get()
+            ->keyBy('id');
+
         // Validate all slots before processing
+        $this->validateSlotIds($schedules, $existing);
+        $this->validateEnrolledGroup($schedules, $existing, $capacity);
         // Check both internal overlaps and database overlaps with other courses
         $this->validateSchedules($course->id, $schedules, $groupId);
 
-        $createdSchedules = DB::transaction(function () use ($course, $description, $groupId, $schedules) {
-            // If group_id is provided, replace schedules with that group_id
-            // Otherwise, replace all schedules for this course (backward compatibility)
-            $oldSchedulesQuery = $groupId
-                ? Schedule::where('group_id', $groupId)
-                : Schedule::where('course_id', $course->id);
-
-            $oldScheduleIds = $oldSchedulesQuery->pluck('id');
-
-            // Capture one enrollment per enrolled student before the old schedules
-            // (and their enrollments, via cascadeOnDelete) are removed, so we can
-            // re-enroll them in the new schedules below.
-            $enrollmentsToRestore = StudentEnrollment::whereIn('schedule_id', $oldScheduleIds)
-                ->get()
-                ->unique('student_id');
-
-            Schedule::whereIn('id', $oldScheduleIds)->delete();
+        $savedSchedules = DB::transaction(function () use ($course, $description, $capacity, $groupId, $schedules, $existing) {
+            $keptIds = collect($schedules)->pluck('id')->filter()->map(fn ($id) => (int) $id);
+            Schedule::whereIn('id', $existing->keys()->diff($keptIds))->delete();
 
             // Use existing group_id or generate a new one
             $finalGroupId = $groupId ?? (string) Str::uuid();
 
-            $created = collect();
+            $saved = collect();
 
             foreach ($schedules as $schedule) {
-                // Normalize time format to HH:MM:SS for database
-                $startsAt = $this->normalizeTime($schedule['starts_at']);
-                $endsAt = $this->normalizeTime($schedule['ends_at']);
-
-                // Create schedule with teacher_id, description, and group_id
-                $newSchedule = Schedule::create([
+                $attributes = [
                     'course_id' => $course->id,
                     'teacher_id' => (int) $schedule['teacher_id'],
                     'day_of_week' => (int) $schedule['day_of_week'],
-                    'starts_at' => $startsAt,
-                    'ends_at' => $endsAt,
+                    // Normalize time format to HH:MM:SS for database
+                    'starts_at' => $this->normalizeTime($schedule['starts_at']),
+                    'ends_at' => $this->normalizeTime($schedule['ends_at']),
                     'description' => $description,
                     'group_id' => $finalGroupId,
-                ]);
+                ];
 
-                $created->push($newSchedule);
+                if ($capacity !== null) {
+                    $attributes['capacity'] = $capacity;
+                }
 
-                // Re-enroll each previously enrolled student in the new schedule slot,
-                // preserving their status/notes/enrolled_at instead of losing the enrollment.
-                foreach ($enrollmentsToRestore as $enrollment) {
-                    StudentEnrollment::create([
-                        'student_id' => $enrollment->student_id,
-                        'schedule_id' => $newSchedule->id,
-                        'enrolled_at' => $enrollment->enrolled_at,
-                        'status' => $enrollment->status,
-                        'notes' => $enrollment->notes,
-                    ]);
+                if (! empty($schedule['id'])) {
+                    $model = $existing->get((int) $schedule['id']);
+                    $model->update($attributes);
+                    $saved->push($model);
+                } else {
+                    $saved->push(Schedule::create($attributes));
                 }
             }
 
-            return $created;
+            return $saved;
         });
 
-        return $createdSchedules->all();
+        return $savedSchedules->all();
+    }
+
+    /**
+     * Slot ids must reference schedules of the group (or course) being edited
+     *
+     * @throws ValidationException
+     */
+    protected function validateSlotIds(array $schedules, Collection $existing): void
+    {
+        foreach ($schedules as $index => $schedule) {
+            if (! empty($schedule['id']) && ! $existing->has((int) $schedule['id'])) {
+                throw ValidationException::withMessages([
+                    'schedules' => [__('schedule.slot_not_in_group', ['slot' => $index + 1])],
+                ]);
+            }
+        }
+    }
+
+    /**
+     * With active students in the group, only teacher/description/capacity can change,
+     * and capacity can't drop below the students already enrolled
+     *
+     * @throws ValidationException
+     */
+    protected function validateEnrolledGroup(array $schedules, Collection $existing, ?int $capacity): void
+    {
+        $enrolled = (int) $existing->max('active_enrollments_count');
+
+        if ($enrolled === 0) {
+            return;
+        }
+
+        if ($capacity !== null && $capacity < $enrolled) {
+            throw ValidationException::withMessages([
+                'capacity' => [__('schedule.capacity_below_enrolled', ['capacity' => $capacity, 'enrolled' => $enrolled])],
+            ]);
+        }
+
+        $keptIds = collect($schedules)->pluck('id')->filter()->map(fn ($id) => (int) $id);
+
+        if ($keptIds->count() !== count($schedules) || $existing->keys()->diff($keptIds)->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'schedules' => [__('schedule.locked_slots', ['count' => $enrolled])],
+            ]);
+        }
+
+        foreach ($schedules as $index => $schedule) {
+            $current = $existing->get((int) $schedule['id']);
+
+            if ((int) $schedule['day_of_week'] !== (int) $current->day_of_week
+                || $this->normalizeTime($schedule['starts_at']) !== $this->normalizeTime($current->starts_at)
+                || $this->normalizeTime($schedule['ends_at']) !== $this->normalizeTime($current->ends_at)) {
+                throw ValidationException::withMessages([
+                    'schedules' => [
+                        __('schedule.locked_time', [
+                            'slot' => $index + 1,
+                            'day' => $this->getDayName((int) $current->day_of_week),
+                            'start' => substr($current->starts_at, 0, 5),
+                            'end' => substr($current->ends_at, 0, 5),
+                            'count' => $enrolled,
+                        ]),
+                    ],
+                ]);
+            }
+        }
     }
 
     /**

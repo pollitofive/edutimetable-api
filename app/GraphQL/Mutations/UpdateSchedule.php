@@ -41,6 +41,10 @@ class UpdateSchedule
             $updateData['description'] = $data['description'];
         }
 
+        if (isset($data['capacity'])) {
+            $updateData['capacity'] = (int) $data['capacity'];
+        }
+
         return $this->service->updateSchedule($scheduleId, $updateData);
     }
 }

@@ -23,6 +23,41 @@ beforeEach(function () {
     $this->course = Course::factory()->create();
 });
 
+/**
+ * Two-slot group (Mon & Wed 10-12) for the given course and teacher
+ *
+ * @return array<Schedule>
+ */
+function makeGroup(Course $course, Teacher $teacher, string $groupId): array
+{
+    return collect([1, 3])->map(fn ($day) => Schedule::factory()->create([
+        'course_id' => $course->id,
+        'teacher_id' => $teacher->id,
+        'day_of_week' => $day,
+        'starts_at' => '10:00:00',
+        'ends_at' => '12:00:00',
+        'group_id' => $groupId,
+        'capacity' => 5,
+    ]))->all();
+}
+
+/**
+ * Enroll a new student in every slot of a group, as EnrollmentService::createEnrollments() does
+ *
+ * @param  array<Schedule>  $schedules
+ * @return array<StudentEnrollment>
+ */
+function enrollInGroup(array $schedules, string $status = 'active'): array
+{
+    $student = Student::factory()->create();
+
+    return collect($schedules)->map(fn ($schedule) => StudentEnrollment::factory()->create([
+        'student_id' => $student->id,
+        'schedule_id' => $schedule->id,
+        'status' => $status,
+    ]))->all();
+}
+
 describe('Bulk Create Schedules', function () {
     test('can create multiple schedules successfully', function () {
         $response = $this->graphQL('
@@ -72,6 +107,27 @@ describe('Bulk Create Schedules', function () {
 
         // Verify schedules were created in database
         expect(Schedule::where('course_id', $this->course->id)->count())->toBe(3);
+    });
+
+    test('stores the given capacity on every slot', function () {
+        $response = $this->graphQL('
+            mutation {
+                bulkCreateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    capacity: 12
+                    schedules: [
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "18:45", ends_at: "20:15" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 4, starts_at: "18:45", ends_at: "20:15" }
+                    ]
+                }) {
+                    capacity
+                }
+            }
+        ');
+
+        $response->assertJsonMissingPath('errors');
+        expect($response->json('data.bulkCreateSchedules.*.capacity'))->toBe([12, 12]);
     });
 
     test('fails with empty schedules array', function () {
@@ -637,50 +693,55 @@ describe('Bulk Update Schedules', function () {
         expect(Schedule::where('course_id', $otherCourse->id)->count())->toBe(2);
     });
 
-    test('preserves student enrollments when a group schedule changes', function () {
-        // Existing group with a student enrolled in both slots (as createEnrollments does)
+    test('updates slots with an id in place, creates new ones and deletes missing ones', function () {
         $groupId = (string) \Illuminate\Support\Str::uuid();
-        $oldSchedule1 = Schedule::factory()->create([
-            'course_id' => $this->course->id,
-            'teacher_id' => $this->teacher->id,
-            'day_of_week' => 1,
-            'starts_at' => '10:00:00',
-            'ends_at' => '12:00:00',
-            'group_id' => $groupId,
-        ]);
-        $oldSchedule2 = Schedule::factory()->create([
-            'course_id' => $this->course->id,
-            'teacher_id' => $this->teacher->id,
-            'day_of_week' => 3,
-            'starts_at' => '10:00:00',
-            'ends_at' => '12:00:00',
-            'group_id' => $groupId,
-        ]);
+        [$kept, $removed] = makeGroup($this->course, $this->teacher, $groupId);
 
-        $student = Student::factory()->create();
-        StudentEnrollment::factory()->create([
-            'student_id' => $student->id,
-            'schedule_id' => $oldSchedule1->id,
-            'status' => 'active',
-            'notes' => 'Needs extra help',
-        ]);
-        StudentEnrollment::factory()->create([
-            'student_id' => $student->id,
-            'schedule_id' => $oldSchedule2->id,
-            'status' => 'active',
-            'notes' => 'Needs extra help',
-        ]);
-
-        // Professor moves the whole course to a new time (still 2 days a week)
         $response = $this->graphQL('
             mutation {
                 bulkUpdateSchedules(input: {
-                    description: "Test Schedule"
+                    description: "Moved"
                     course_id: '.$this->course->id.'
                     group_id: "'.$groupId.'"
+                    capacity: 8
                     schedules: [
-                        { teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "14:00", ends_at: "16:00" }
-                        { teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "14:00", ends_at: "16:00" }
+                        { id: '.$kept->id.', teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "14:00", ends_at: "16:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 5, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                    capacity
+                }
+            }
+        ');
+
+        $response->assertJsonMissingPath('errors');
+        expect($response->json('data.bulkUpdateSchedules.0.id'))->toBe((string) $kept->id);
+        expect($response->json('data.bulkUpdateSchedules.*.capacity'))->toBe([8, 8]);
+
+        expect(Schedule::find($removed->id))->toBeNull();
+        $kept->refresh();
+        expect($kept->day_of_week)->toBe(2);
+        expect($kept->starts_at)->toBe('14:00:00');
+        expect(Schedule::where('group_id', $groupId)->count())->toBe(2);
+    });
+
+    test('keeps enrollments when editing teacher, description and capacity of a group with students', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        $enrollments = enrollInGroup([$schedule1, $schedule2]);
+        $otherTeacher = Teacher::factory()->create();
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Renamed"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    capacity: 10
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$otherTeacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { id: '.$schedule2->id.', teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "10:00", ends_at: "12:00" }
                     ]
                 }) {
                     id
@@ -690,21 +751,181 @@ describe('Bulk Update Schedules', function () {
 
         $response->assertJsonMissingPath('errors');
 
-        // Old schedules are gone
-        expect(Schedule::whereIn('id', [$oldSchedule1->id, $oldSchedule2->id])->count())->toBe(0);
+        expect($schedule1->fresh()->teacher_id)->toBe($otherTeacher->id);
+        expect($schedule1->fresh()->description)->toBe('Renamed');
+        expect($schedule2->fresh()->capacity)->toBe(10);
 
-        $newSchedules = Schedule::where('group_id', $groupId)->get();
-        expect($newSchedules)->toHaveCount(2);
-
-        // The student is re-enrolled in both new schedule slots, preserving status/notes
-        $enrollments = StudentEnrollment::where('student_id', $student->id)->get();
-        expect($enrollments)->toHaveCount(2);
-        expect($enrollments->pluck('schedule_id')->sort()->values()->all())
-            ->toBe($newSchedules->pluck('id')->sort()->values()->all());
+        // Same rows, same schedules: nothing was deleted and recreated
         foreach ($enrollments as $enrollment) {
-            expect($enrollment->status)->toBe('active');
-            expect($enrollment->notes)->toBe('Needs extra help');
+            expect($enrollment->fresh())->not->toBeNull();
+            expect($enrollment->fresh()->status)->toBe('active');
         }
+    });
+
+    test('rejects changing day or time of a group with active students', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup([$schedule1, $schedule2]);
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "14:00", ends_at: "16:00" }
+                        { id: '.$schedule2->id.', teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertGraphQLValidationKeys(['schedules']);
+        expect($schedule1->fresh()->starts_at)->toBe('10:00:00');
+        expect(StudentEnrollment::active()->count())->toBe(2);
+    });
+
+    test('rejects adding a slot to a group with active students', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup([$schedule1, $schedule2]);
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { id: '.$schedule2->id.', teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "10:00", ends_at: "12:00" }
+                        { teacher_id: '.$this->teacher->id.', day_of_week: 5, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertGraphQLValidationKeys(['schedules']);
+        expect(Schedule::where('group_id', $groupId)->count())->toBe(2);
+    });
+
+    test('rejects removing a slot from a group with active students', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup([$schedule1, $schedule2]);
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertGraphQLValidationKeys(['schedules']);
+        expect(Schedule::find($schedule2->id))->not->toBeNull();
+        expect(StudentEnrollment::active()->count())->toBe(2);
+    });
+
+    test('rejects a capacity below the active students of the group', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup([$schedule1, $schedule2]);
+        enrollInGroup([$schedule1, $schedule2]);
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    capacity: 1
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                        { id: '.$schedule2->id.', teacher_id: '.$this->teacher->id.', day_of_week: 3, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertGraphQLValidationKeys(['capacity']);
+    });
+
+    test('allows changing day and time when the group only has dropped students, keeping their history', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        $enrollments = enrollInGroup([$schedule1, $schedule2], 'dropped');
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { id: '.$schedule1->id.', teacher_id: '.$this->teacher->id.', day_of_week: 2, starts_at: "14:00", ends_at: "16:00" }
+                        { id: '.$schedule2->id.', teacher_id: '.$this->teacher->id.', day_of_week: 4, starts_at: "14:00", ends_at: "16:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertJsonMissingPath('errors');
+        expect($schedule1->fresh()->day_of_week)->toBe(2);
+        foreach ($enrollments as $enrollment) {
+            expect($enrollment->fresh())->not->toBeNull();
+        }
+    });
+
+    test('rejects a slot id from another group', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        makeGroup($this->course, $this->teacher, $groupId);
+        $foreign = Schedule::factory()->create(['teacher_id' => Teacher::factory()->create()->id]);
+
+        $response = $this->graphQL('
+            mutation {
+                bulkUpdateSchedules(input: {
+                    description: "Test Schedule"
+                    course_id: '.$this->course->id.'
+                    group_id: "'.$groupId.'"
+                    schedules: [
+                        { id: '.$foreign->id.', teacher_id: '.$this->teacher->id.', day_of_week: 1, starts_at: "10:00", ends_at: "12:00" }
+                    ]
+                }) {
+                    id
+                }
+            }
+        ');
+
+        $response->assertGraphQLValidationKeys(['schedules']);
+        expect($foreign->fresh()->course_id)->not->toBe($this->course->id);
+    });
+
+    test('exposes the active enrollments count of each schedule', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        [$schedule1, $schedule2] = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup([$schedule1, $schedule2]);
+        enrollInGroup([$schedule1, $schedule2], 'dropped');
+
+        $response = $this->graphQL('{ schedules(group_id: "'.$groupId.'") { data { id active_enrollments_count } } }');
+
+        expect($response->json('data.schedules.data.*.active_enrollments_count'))->toBe([1, 1]);
     });
 
     test('can set description on bulk create', function () {
@@ -774,6 +995,34 @@ describe('Bulk Update Schedules', function () {
         // Verify schedule has the new description
         $schedule = Schedule::where('course_id', $this->course->id)->first();
         expect($schedule->description)->toBe('Updated description');
+    });
+});
+
+describe('Delete Schedule Group', function () {
+    test('deletes every slot of the group and nothing else', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup(Schedule::where('group_id', $groupId)->get()->all(), 'dropped');
+        $other = Schedule::factory()->create(['teacher_id' => Teacher::factory()->create()->id]);
+
+        $response = $this->graphQL('mutation { deleteScheduleGroup(group_id: "'.$groupId.'") { id } }');
+
+        $response->assertJsonMissingPath('errors');
+        $response->assertJsonCount(2, 'data.deleteScheduleGroup');
+        expect(Schedule::where('group_id', $groupId)->count())->toBe(0);
+        expect(Schedule::find($other->id))->not->toBeNull();
+    });
+
+    test('rejects deleting a group with active students', function () {
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        $schedules = makeGroup($this->course, $this->teacher, $groupId);
+        enrollInGroup($schedules);
+
+        $response = $this->graphQL('mutation { deleteScheduleGroup(group_id: "'.$groupId.'") { id } }');
+
+        $response->assertGraphQLValidationKeys(['group_id']);
+        expect(Schedule::where('group_id', $groupId)->count())->toBe(2);
+        expect(StudentEnrollment::active()->count())->toBe(2);
     });
 });
 
