@@ -269,7 +269,7 @@ input CreateScheduleInput {
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
-  description: String
+  description: String!
   capacity: Int @rules(apply: ["integer", "min:1"])
 }
 

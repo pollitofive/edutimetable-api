@@ -128,6 +128,9 @@ it('can query teachers via GraphQL', function () {
 });
 
 it('requires authentication for teacher mutations', function () {
+    // beforeEach autentica con Sanctum: olvidamos los guards para pegarle a la API como invitado
+    app('auth')->forgetGuards();
+
     $mutation = '
         mutation {
             createTeacher(input: {
@@ -150,4 +153,15 @@ it('requires authentication for teacher mutations', function () {
             ],
         ],
     ]);
-})->skip('Authentication required');
+});
+
+it('does not leak teachers to guests', function () {
+    Teacher::factory()->count(2)->create();
+    app('auth')->forgetGuards();
+
+    $response = $this->postGraphQL(['query' => '{ teachers { data { id name } } }']);
+
+    $response->assertStatus(401)
+        ->assertJsonMissingPath('data')
+        ->assertJson(['errors' => [['message' => 'Unauthenticated.']]]);
+});
