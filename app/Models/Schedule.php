@@ -53,6 +53,14 @@ class Schedule extends Model
     }
 
     /**
+     * Enrollments of students currently attending this schedule (not dropped/completed)
+     */
+    public function activeEnrollments(): HasMany
+    {
+        return $this->enrollments()->where('status', 'active');
+    }
+
+    /**
      * Get all students enrolled in this schedule
      */
     public function students(): BelongsToMany

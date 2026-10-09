@@ -11,6 +11,8 @@ type Query {
   courses(id: ID @eq, name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Course!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   students(search: String @scope(name: "search"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Student!]! @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where(operator: "like"), group_id: String @where(operator: "like"), starts_at_from: String @scope(name: "startsAtFrom"), starts_at_to: String @scope(name: "startsAtTo")): [Schedule!]! @paginate(defaultCount: 20)
+  scheduleGroups(first: Int!, page: Int, course_id: ID, teacher_id: ID, day_of_week: Int, description: String, starts_at_from: String, starts_at_to: String): ScheduleGroupPage! @guard
+    @field(resolver: "App\\GraphQL\\Queries\\ScheduleGroups@__invoke")
   studentAvailabilities(student_id: ID, day_of_week: Int): [StudentAvailability!]! @paginate(defaultCount: 50, builder: "App\\GraphQL\\Queries\\StudentAvailabilities")
   studentAvailability(id: ID! @eq): StudentAvailability @find
 }
@@ -48,7 +50,10 @@ type Mutation {
       @field(resolver: "App\\GraphQL\\Mutations\\CreateSchedule@__invoke")
     updateSchedule(id: ID!, input: UpdateScheduleInput!): Schedule @guard
       @field(resolver: "App\\GraphQL\\Mutations\\UpdateSchedule@__invoke")
-    deleteSchedule(id: ID! @eq(key: "id")): Schedule @guard @delete(globalId: true)
+    deleteSchedule(id: ID!): Schedule @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\DeleteSchedule@__invoke")
+    deleteScheduleGroup(group_id: String!): [Schedule!]! @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\DeleteScheduleGroup@__invoke")
 
     createStudentAvailability(input: CreateStudentAvailabilityInput! @spread): StudentAvailability @guard
       @field(resolver: "App\\GraphQL\\Mutations\\CreateStudentAvailability@__invoke")
@@ -172,10 +177,35 @@ type Schedule @model(class: "App\\Models\\Schedule") {
   description: String
   group_id: String
   capacity: Int!
+  active_enrollments_count: Int! @count(relation: "activeEnrollments")
   enrollments: [StudentEnrollment!]! @hasMany
   students: [Student!]! @belongsToMany(relation: "students")
   created_at: DateTime!
   updated_at: DateTime!
+}
+
+""" A course offering: every weekly slot sharing a group_id, with its group-level data """
+type ScheduleGroup {
+  group_id: String!
+  course: Course!
+  description: String
+  capacity: Int!
+  active_enrollments_count: Int!
+  schedules: [Schedule!]!
+}
+
+type ScheduleGroupPage {
+  data: [ScheduleGroup!]!
+  paginatorInfo: ScheduleGroupPaginatorInfo!
+}
+
+type ScheduleGroupPaginatorInfo {
+  total: Int!
+  count: Int!
+  currentPage: Int!
+  lastPage: Int!
+  hasMorePages: Boolean!
+  perPage: Int!
 }
 
 type StudentEnrollment @model(class: "App\\Models\\StudentEnrollment") {
@@ -321,16 +351,27 @@ input ScheduleSlotInput {
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
 }
 
+""" Like ScheduleSlotInput, plus the id of the existing schedule being edited (omit it for a new slot) """
+input UpdateScheduleSlotInput {
+  id: ID
+  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
+  day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
+  starts_at: String! @rules(apply: ["required", "date_format:H:i"])
+  ends_at: String! @rules(apply: ["required", "date_format:H:i"])
+}
+
 input BulkCreateSchedulesInput {
   course_id: ID! @rules(apply: ["required", "exists:courses,id"])
   description: String!
+  capacity: Int @rules(apply: ["integer", "min:1"])
   schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 
 input BulkUpdateSchedulesInput {
   course_id: ID! @rules(apply: ["required", "exists:courses,id"])
   description: String!
+  capacity: Int @rules(apply: ["integer", "min:1"])
   group_id: String
-  schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
+  schedules: [UpdateScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 

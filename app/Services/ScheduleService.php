@@ -189,6 +189,26 @@ class ScheduleService
             ]);
         }
 
+        // 3b) With active students, day/time can't change here (that goes through the
+        // schedule change simulator) and capacity can't drop below the enrolled count
+        $enrolled = $schedule->activeEnrollments()->count();
+
+        if ($enrolled > 0) {
+            if ((int) $mergedData['day_of_week'] !== (int) $schedule->day_of_week
+                || $start->format('H:i:00') !== $schedule->starts_at
+                || $end->format('H:i:00') !== $schedule->ends_at) {
+                throw ValidationException::withMessages([
+                    'time' => __('schedule.locked_time_single', ['count' => $enrolled]),
+                ]);
+            }
+
+            if (isset($data['capacity']) && $data['capacity'] < $enrolled) {
+                throw ValidationException::withMessages([
+                    'capacity' => __('schedule.capacity_below_enrolled', ['capacity' => $data['capacity'], 'enrolled' => $enrolled]),
+                ]);
+            }
+        }
+
         // 4) Overlap check for TEACHER (required)
         // Prevents the same teacher from teaching multiple courses at the same time
         $teacherOverlaps = Schedule::query()
@@ -248,6 +268,10 @@ class ScheduleService
         // Only update group_id if it's explicitly provided in the input
         if (array_key_exists('group_id', $data)) {
             $updateData['group_id'] = $data['group_id'];
+        }
+
+        if (array_key_exists('capacity', $data)) {
+            $updateData['capacity'] = $data['capacity'];
         }
 
         $schedule->update($updateData);

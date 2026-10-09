@@ -4,6 +4,7 @@ namespace Tests\Feature\GraphQL;
 
 use App\Models\Course;
 use App\Models\Schedule;
+use App\Models\StudentEnrollment;
 use App\Models\Teacher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -243,6 +244,72 @@ it('can update a schedule via GraphQL', function () {
     $schedule->refresh();
     expect($schedule->starts_at)->toBe('10:00:00');
     expect($schedule->ends_at)->toBe('11:00:00');
+});
+
+it('rejects changing day or time of a schedule with active students', function () {
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+        'starts_at' => '09:00:00',
+        'ends_at' => '10:00:00',
+    ]);
+    StudentEnrollment::factory()->create(['schedule_id' => $schedule->id, 'status' => 'active']);
+
+    $response = $this->postGraphQL(['query' => "
+        mutation {
+            updateSchedule(id: {$schedule->id}, input: { starts_at: \"10:00\", ends_at: \"11:00\" }) { id }
+        }
+    "]);
+
+    $response->assertGraphQLValidationKeys(['time']);
+    expect($schedule->fresh()->starts_at)->toBe('09:00:00');
+});
+
+it('updates the capacity of a schedule with active students, but not below them', function () {
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+        'capacity' => 5,
+    ]);
+    StudentEnrollment::factory()->count(2)->create(['schedule_id' => $schedule->id, 'status' => 'active']);
+
+    $update = fn (int $capacity) => $this->postGraphQL(['query' => "
+        mutation {
+            updateSchedule(id: {$schedule->id}, input: { capacity: {$capacity} }) { id capacity }
+        }
+    "]);
+
+    $update(1)->assertGraphQLValidationKeys(['capacity']);
+
+    $update(8)->assertJsonMissingPath('errors');
+    expect($schedule->fresh()->capacity)->toBe(8);
+});
+
+it('rejects deleting a schedule with active students', function () {
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
+    StudentEnrollment::factory()->create(['schedule_id' => $schedule->id, 'status' => 'active']);
+
+    $response = $this->postGraphQL(['query' => "mutation { deleteSchedule(id: {$schedule->id}) { id } }"]);
+
+    $response->assertGraphQLValidationKeys(['id']);
+    expect(Schedule::find($schedule->id))->not->toBeNull();
+    expect(StudentEnrollment::where('schedule_id', $schedule->id)->count())->toBe(1);
+});
+
+it('deletes a schedule that only has dropped students', function () {
+    $schedule = Schedule::factory()->create([
+        'course_id' => $this->course->id,
+        'teacher_id' => $this->teacher->id,
+    ]);
+    StudentEnrollment::factory()->create(['schedule_id' => $schedule->id, 'status' => 'dropped']);
+
+    $this->postGraphQL(['query' => "mutation { deleteSchedule(id: {$schedule->id}) { id } }"])
+        ->assertJsonMissingPath('errors');
+
+    expect(Schedule::find($schedule->id))->toBeNull();
 });
 
 it('can delete a schedule via GraphQL', function () {
