@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\ScheduleChangeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/enrollments/{id}', [EnrollmentController::class, 'update']);
         Route::post('/enrollments/{id}/drop', [EnrollmentController::class, 'drop']);
         Route::delete('/enrollments/{id}', [EnrollmentController::class, 'destroy']);
+
+        // Schedule change simulator ("what if" + apply)
+        Route::post('/schedule-changes/preview', [ScheduleChangeController::class, 'preview']);
+        Route::post('/schedule-changes/apply', [ScheduleChangeController::class, 'apply']);
 
         // DEBUG: Endpoint to verify business context
         Route::get('/debug/business-context', function (Request $request) {

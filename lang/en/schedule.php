@@ -23,6 +23,14 @@ return [
     'delete_group_with_students' => 'The course has :count enrolled students and can\'t be deleted. Drop them from the course in Enrollments first.',
     'locked_time_single' => 'This schedule has :count enrolled students, its day and time can\'t change. Use the simulator in Enrollments.',
 
+    // Schedule change simulator (ScheduleChangeService)
+    'change' => [
+        'slots_mismatch' => 'The slots sent must be every day of a single course (the simulator does not add or remove days).',
+        'no_changes' => 'The proposed schedule is the same as the current one.',
+        'has_conflicts' => 'The change has conflicts that prevent applying it. Simulate it again.',
+        'drop_not_affected' => 'Only students affected by the change can be dropped.',
+    ],
+
     // Days of week
     'days' => [
         0 => 'Sunday',

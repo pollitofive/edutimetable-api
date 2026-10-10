@@ -38,7 +38,20 @@ class EnrollmentService
             $query->whereHas('course.courseLevel', fn ($q) => $q->whereIn('track_id', (array) $filters['track_ids']));
         }
 
-        return $query->get()->map(fn ($s) => $this->formatSchedule($s));
+        $schedules = $query->get();
+
+        // Whole groups, regardless of the filters, so the client knows every
+        // day of a course even when the day filter hides some of them
+        $groupSlots = Schedule::whereIn('group_id', $schedules->pluck('group_id')->filter()->unique())
+            ->orderBy('day_of_week')
+            ->orderBy('starts_at')
+            ->get()
+            ->groupBy('group_id');
+
+        return $schedules->map(fn ($s) => $this->formatSchedule(
+            $s,
+            $s->group_id ? $groupSlots->get($s->group_id, collect([$s])) : collect([$s])
+        ));
     }
 
     public function getEligibleStudents(int $scheduleId, string $search = ''): array
@@ -220,13 +233,24 @@ class EnrollmentService
             ? Schedule::where('group_id', $groupId)->pluck('id')
             : collect([$enrollment->schedule_id]);
 
-        return StudentEnrollment::where('student_id', $enrollment->student_id)
+        return $this->dropStudentFromSchedules($enrollment->student_id, $scheduleIds);
+    }
+
+    /**
+     * Marks the student's active enrollments in the given schedules as dropped.
+     */
+    public function dropStudentFromSchedules(int $studentId, Collection|array $scheduleIds): int
+    {
+        return StudentEnrollment::where('student_id', $studentId)
             ->whereIn('schedule_id', $scheduleIds)
             ->where('status', 'active')
             ->update(['status' => 'dropped']);
     }
 
-    private function formatSchedule(Schedule $schedule): array
+    /**
+     * @param  Collection<int, Schedule>  $groupSlots  every schedule of the schedule's group, itself included
+     */
+    private function formatSchedule(Schedule $schedule, Collection $groupSlots): array
     {
         return [
             'id' => $schedule->id,
@@ -240,6 +264,13 @@ class EnrollmentService
             'capacity' => $schedule->capacity,
             'enrolled_count' => $schedule->enrolled_count,
             'available_spots' => $schedule->capacity - $schedule->enrolled_count,
+            'group_slots' => $groupSlots->map(fn ($s) => [
+                'id' => $s->id,
+                'teacher_id' => $s->teacher_id,
+                'day_of_week' => $s->day_of_week,
+                'starts_at' => substr($s->starts_at, 0, 5),
+                'ends_at' => substr($s->ends_at, 0, 5),
+            ])->values()->toArray(),
             'course' => [
                 'id' => $schedule->course->id,
                 'name' => $schedule->course->name,
@@ -327,10 +358,6 @@ class EnrollmentService
 
     private function isStudentAvailable(Student $student, Schedule $schedule): bool
     {
-        return $student->availabilities->contains(function ($avail) use ($schedule) {
-            return (int) $avail->day_of_week === (int) $schedule->day_of_week
-                && $avail->start_time <= $schedule->starts_at
-                && $avail->end_time >= $schedule->ends_at;
-        });
+        return $student->isAvailableFor((int) $schedule->day_of_week, $schedule->starts_at, $schedule->ends_at);
     }
 }
