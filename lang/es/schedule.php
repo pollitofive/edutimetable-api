@@ -23,6 +23,14 @@ return [
     'delete_group_with_students' => 'El curso tiene :count alumnos inscriptos, no se puede eliminar. Primero quitalos del curso desde Inscripciones.',
     'locked_time_single' => 'Este horario tiene :count alumnos inscriptos, no se puede cambiar el día ni el horario. Usá el simulador en Inscripciones.',
 
+    // Schedule change simulator (ScheduleChangeService)
+    'change' => [
+        'slots_mismatch' => 'Los horarios enviados tienen que ser todos los días de un mismo curso (el simulador no agrega ni quita días).',
+        'no_changes' => 'El horario propuesto es igual al actual.',
+        'has_conflicts' => 'El cambio tiene conflictos que impiden aplicarlo. Volvé a simularlo.',
+        'drop_not_affected' => 'Solo se puede dar de baja a alumnos afectados por el cambio.',
+    ],
+
     // Days of week
     'days' => [
         0 => 'Domingo',

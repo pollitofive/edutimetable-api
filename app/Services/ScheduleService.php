@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Course;
 use App\Models\Schedule;
 use App\Models\Teacher;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -22,6 +23,24 @@ class ScheduleService
     public const ERROR_OVERLAP_COURSE = 'SCHEDULE_OVERLAP_COURSE';
 
     public const ERROR_FOREIGN_TENANT_REF = 'SCHEDULE_FOREIGN_TENANT_REF';
+
+    /**
+     * Schedules of the teacher that overlap the given slot on the same day.
+     * Overlaps when (start < existing_end) AND (end > existing_start).
+     *
+     * @param  string  $startsAt  HH:MM:SS
+     * @param  string  $endsAt  HH:MM:SS
+     * @param  array<int>  $excludeIds  schedules to ignore (e.g. the ones being moved)
+     */
+    public function teacherOverlapQuery(int $teacherId, int $dayOfWeek, string $startsAt, string $endsAt, array $excludeIds = []): Builder
+    {
+        return Schedule::query()
+            ->where('teacher_id', $teacherId)
+            ->where('day_of_week', $dayOfWeek)
+            ->when($excludeIds, fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->where('starts_at', '<', $endsAt)
+            ->where('ends_at', '>', $startsAt);
+    }
 
     /**
      * @param  array  $data  ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
@@ -73,15 +92,9 @@ class ScheduleService
 
         // 4) Overlap check for TEACHER (required)
         // Prevents the same teacher from teaching multiple courses at the same time
-        $teacherOverlaps = Schedule::query()
-            ->where('teacher_id', $teacherId)
-            ->where('day_of_week', $data['day_of_week'])
-            ->where(function ($q) use ($start, $end) {
-                // Overlaps when (start < existing_end) AND (end > existing_start)
-                $q->where('starts_at', '<', $end->format('H:i:00'))
-                    ->where('ends_at', '>', $start->format('H:i:00'));
-            })
-            ->exists();
+        $teacherOverlaps = $this->teacherOverlapQuery(
+            $teacherId, (int) $data['day_of_week'], $start->format('H:i:00'), $end->format('H:i:00')
+        )->exists();
 
         if ($teacherOverlaps) {
             throw ValidationException::withMessages([
@@ -211,15 +224,13 @@ class ScheduleService
 
         // 4) Overlap check for TEACHER (required)
         // Prevents the same teacher from teaching multiple courses at the same time
-        $teacherOverlaps = Schedule::query()
-            ->where('id', '!=', $scheduleId)  // Exclude current schedule
-            ->where('teacher_id', $mergedData['teacher_id'])
-            ->where('day_of_week', $mergedData['day_of_week'])
-            ->where(function ($q) use ($start, $end) {
-                $q->where('starts_at', '<', $end->format('H:i:00'))
-                    ->where('ends_at', '>', $start->format('H:i:00'));
-            })
-            ->exists();
+        $teacherOverlaps = $this->teacherOverlapQuery(
+            (int) $mergedData['teacher_id'],
+            (int) $mergedData['day_of_week'],
+            $start->format('H:i:00'),
+            $end->format('H:i:00'),
+            [$scheduleId]  // Exclude current schedule
+        )->exists();
 
         if ($teacherOverlaps) {
             throw ValidationException::withMessages([

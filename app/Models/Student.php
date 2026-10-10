@@ -62,6 +62,19 @@ class Student extends Model
     }
 
     /**
+     * Whether one of the student's availability ranges fully covers the given slot.
+     * Times are compared as HH:MM:SS strings, as stored in the database.
+     */
+    public function isAvailableFor(int $dayOfWeek, string $startsAt, string $endsAt): bool
+    {
+        return $this->availabilities->contains(function ($avail) use ($dayOfWeek, $startsAt, $endsAt) {
+            return (int) $avail->day_of_week === $dayOfWeek
+                && $avail->start_time <= $startsAt
+                && $avail->end_time >= $endsAt;
+        });
+    }
+
+    /**
      * A student has many enrollments
      */
     public function enrollments(): HasMany
