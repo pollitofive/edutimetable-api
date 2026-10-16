@@ -24,11 +24,20 @@ class ResolveBusiness
         if ($this->shouldSkipBusinessValidation($request)) {
             return $next($request);
         }
+
+        // Guests can't have a business context. Reject them here instead of letting the
+        // request through: queries without @guard would run with no tenant scope at all.
+        if (! $request->user()) {
+            return response()->json([
+                'errors' => [['message' => 'Unauthenticated.']],
+            ], 401);
+        }
+
         // Get business ID from X-Business-Id header
         $businessId = $request->header('X-Business-Id');
 
         // If no header, try to use user's default_business_id
-        if (! $businessId && $request->user()) {
+        if (! $businessId) {
             $businessId = $request->user()->default_business_id;
         }
 
