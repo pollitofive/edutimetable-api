@@ -71,6 +71,16 @@ class Schedule extends Model
     }
 
     /**
+     * Whether two time ranges of the same day overlap. Back-to-back ranges (one ends
+     * when the other starts) don't. Only HH:MM is compared, so HH:MM and HH:MM:SS mix.
+     */
+    public static function timesOverlap(string $startsA, string $endsA, string $startsB, string $endsB): bool
+    {
+        return substr($startsA, 0, 5) < substr($endsB, 0, 5)
+            && substr($endsA, 0, 5) > substr($startsB, 0, 5);
+    }
+
+    /**
      * Filter schedules that start at or after a given time
      */
     public function scopeStartsAtFrom(Builder $query, string $time): Builder

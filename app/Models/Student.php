@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Student extends Model
 {
@@ -72,6 +73,25 @@ class Student extends Model
                 && $avail->start_time <= $startsAt
                 && $avail->end_time >= $endsAt;
         });
+    }
+
+    /**
+     * Schedules the student actively attends that overlap the given slot, leaving out
+     * $excludeScheduleIds (usually the group being enrolled in or moved).
+     * Uses the activeEnrollments.schedule relation, so eager load it (with course).
+     *
+     * @param  array<int>  $excludeScheduleIds
+     * @return Collection<int, Schedule>
+     */
+    public function conflictingSchedules(int $dayOfWeek, string $startsAt, string $endsAt, array $excludeScheduleIds = []): Collection
+    {
+        return $this->activeEnrollments
+            ->pluck('schedule')
+            ->filter(fn ($s) => $s
+                && ! in_array($s->id, $excludeScheduleIds)
+                && (int) $s->day_of_week === $dayOfWeek
+                && Schedule::timesOverlap($startsAt, $endsAt, $s->starts_at, $s->ends_at))
+            ->values();
     }
 
     /**
