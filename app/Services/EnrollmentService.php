@@ -59,27 +59,33 @@ class EnrollmentService
         $schedule = Schedule::with('course.courseLevel.track')->findOrFail($scheduleId);
         $trackId = $schedule->course->courseLevel->track_id;
 
+        // The student is enrolled in every day of the group, so every day must fit
+        $group = $this->groupSchedules($schedule);
+
         $enrolledIds = StudentEnrollment::where('schedule_id', $scheduleId)
             ->where('status', 'active')
             ->pluck('student_id')
             ->toArray();
 
-        $students = Student::with(['courseLevel.track', 'availabilities'])
+        $students = Student::with(['courseLevel.track', 'availabilities', 'activeEnrollments.schedule.course'])
             ->whereHas('courseLevel', fn ($q) => $q->where('track_id', $trackId))
             ->when($search !== '', fn ($q) => $q->search($search))
             ->orderBy('name')
             ->get();
 
-        return $students->map(function (Student $student) use ($schedule, $enrolledIds) {
+        return $students->map(function (Student $student) use ($group, $enrolledIds) {
             $alreadyEnrolled = in_array($student->id, $enrolledIds);
-            $isAvailable = ! $alreadyEnrolled && $this->isStudentAvailable($student, $schedule);
+            $blocked = $alreadyEnrolled
+                ? ['blocked_reason' => 'enrolled', 'conflict' => null]
+                : $this->blockingReason($student, $group);
 
             return [
                 'id' => $student->id,
                 'name' => $student->name,
                 'email' => $student->email,
                 'already_enrolled' => $alreadyEnrolled,
-                'is_available' => $isAvailable,
+                'is_available' => $blocked['blocked_reason'] === null,
+                ...$blocked,
                 'course_level' => $student->courseLevel ? [
                     'name' => $student->courseLevel->name,
                     'track' => ['id' => $student->courseLevel->track->id, 'name' => $student->courseLevel->track->name],
@@ -90,7 +96,7 @@ class EnrollmentService
 
     public function getCompatibleSchedules(int $studentId): array
     {
-        $student = Student::with(['courseLevel.track', 'availabilities'])->findOrFail($studentId);
+        $student = Student::with(['courseLevel.track', 'availabilities', 'activeEnrollments.schedule.course'])->findOrFail($studentId);
 
         if (! $student->course_level_id) {
             return ['student' => $this->formatStudent($student), 'schedule_groups' => []];
@@ -161,20 +167,21 @@ class EnrollmentService
 
     public function createEnrollments(int $studentId, array $scheduleIds): array
     {
-        Student::findOrFail($studentId);
+        $student = Student::with('availabilities')->findOrFail($studentId);
 
-        return DB::transaction(function () use ($studentId, $scheduleIds) {
+        return DB::transaction(function () use ($student, $scheduleIds) {
             $result = [];
             foreach ($scheduleIds as $scheduleId) {
-                $result[] = $this->createSingleEnrollment($studentId, (int) $scheduleId);
+                $result[] = $this->createSingleEnrollment($student, (int) $scheduleId);
             }
 
             return $result;
         });
     }
 
-    private function createSingleEnrollment(int $studentId, int $scheduleId): StudentEnrollment
+    private function createSingleEnrollment(Student $student, int $scheduleId): StudentEnrollment
     {
+        $studentId = $student->id;
         $schedule = Schedule::withCount([
             'enrollments as enrolled_count' => fn ($q) => $q->where('status', 'active'),
         ])->findOrFail($scheduleId);
@@ -191,6 +198,25 @@ class EnrollmentService
         if ($schedule->enrolled_count >= $schedule->capacity) {
             throw ValidationException::withMessages([
                 'schedule_id' => __('enrollment.no_spots'),
+            ]);
+        }
+
+        // Reloaded on every slot so the ones just created in this same request count too
+        $student->load('activeEnrollments.schedule.course');
+        $blocked = $this->blockingReason($student, collect([$schedule]), $this->groupSchedules($schedule)->pluck('id')->all());
+
+        if ($blocked['blocked_reason'] === 'unavailable') {
+            throw ValidationException::withMessages([
+                'schedule_id' => __('enrollment.unavailable', $this->slotParams($schedule->day_of_week, $schedule->starts_at, $schedule->ends_at)),
+            ]);
+        }
+
+        if ($blocked['blocked_reason'] === 'overlap') {
+            $conflict = $blocked['conflict'];
+
+            throw ValidationException::withMessages([
+                'schedule_id' => __('enrollment.schedule_conflict', ['course' => $conflict['course_name']]
+                    + $this->slotParams($conflict['day_of_week'], $conflict['starts_at'], $conflict['ends_at'])),
             ]);
         }
 
@@ -331,8 +357,13 @@ class EnrollmentService
         return $grouped->map(function (Collection $group) use ($student, $enrolledIds) {
             $first = $group->first();
             $isEnrolled = $group->contains(fn ($s) => in_array($s->id, $enrolledIds));
-            $allAvailable = $group->every(fn ($s) => $this->isStudentAvailable($student, $s));
             $hasCapacity = $group->every(fn ($s) => $s->enrolled_count < $s->capacity);
+
+            $blocked = match (true) {
+                $isEnrolled => ['blocked_reason' => 'enrolled', 'conflict' => null],
+                ! $hasCapacity => ['blocked_reason' => 'full', 'conflict' => null],
+                default => $this->blockingReason($student, $group),
+            };
 
             $daysLabel = $group
                 ->sortBy('day_of_week')
@@ -350,14 +381,67 @@ class EnrollmentService
                 'enrolled_count' => $first->enrolled_count,
                 'capacity' => $first->capacity,
                 'available_spots' => $first->capacity - $first->enrolled_count,
-                'is_compatible' => ! $isEnrolled && $allAvailable && $hasCapacity,
+                'is_compatible' => $blocked['blocked_reason'] === null,
                 'already_enrolled' => $isEnrolled,
+                ...$blocked,
             ];
         })->values()->toArray();
     }
 
-    private function isStudentAvailable(Student $student, Schedule $schedule): bool
+    /**
+     * Why the student can't take the given schedules: a slot outside their availability
+     * ('unavailable') or overlapping another schedule they attend ('overlap', with that
+     * schedule as 'conflict'). Schedules in $excludeIds (by default the given ones) don't
+     * count as overlaps. Needs availabilities and activeEnrollments.schedule.course loaded.
+     *
+     * @param  Collection<int, Schedule>  $schedules
+     * @param  array<int>|null  $excludeIds
+     * @return array{blocked_reason: string|null, conflict: array|null}
+     */
+    private function blockingReason(Student $student, Collection $schedules, ?array $excludeIds = null): array
     {
-        return $student->isAvailableFor((int) $schedule->day_of_week, $schedule->starts_at, $schedule->ends_at);
+        $excludeIds ??= $schedules->pluck('id')->all();
+
+        foreach ($schedules as $s) {
+            if (! $student->isAvailableFor((int) $s->day_of_week, $s->starts_at, $s->ends_at)) {
+                return ['blocked_reason' => 'unavailable', 'conflict' => null];
+            }
+        }
+
+        foreach ($schedules as $s) {
+            $other = $student->conflictingSchedules((int) $s->day_of_week, $s->starts_at, $s->ends_at, $excludeIds)->first();
+
+            if ($other) {
+                return ['blocked_reason' => 'overlap', 'conflict' => [
+                    'course_name' => $other->course->name,
+                    'day_of_week' => (int) $other->day_of_week,
+                    'starts_at' => substr($other->starts_at, 0, 5),
+                    'ends_at' => substr($other->ends_at, 0, 5),
+                ]];
+            }
+        }
+
+        return ['blocked_reason' => null, 'conflict' => null];
+    }
+
+    /**
+     * Every schedule of the given schedule's group, itself included.
+     *
+     * @return Collection<int, Schedule>
+     */
+    private function groupSchedules(Schedule $schedule): Collection
+    {
+        return $schedule->group_id
+            ? Schedule::where('group_id', $schedule->group_id)->get()
+            : collect([$schedule]);
+    }
+
+    private function slotParams(int|string $dayOfWeek, string $startsAt, string $endsAt): array
+    {
+        return [
+            'day' => __('schedule.days.'.(int) $dayOfWeek),
+            'starts_at' => substr($startsAt, 0, 5),
+            'ends_at' => substr($endsAt, 0, 5),
+        ];
     }
 }

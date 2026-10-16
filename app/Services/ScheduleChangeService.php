@@ -190,7 +190,8 @@ class ScheduleChangeService
                 $a = $slots[$i];
                 $b = $slots[$j];
 
-                if ($a['day_of_week'] === $b['day_of_week'] && $this->overlaps($a, $b)) {
+                if ($a['day_of_week'] === $b['day_of_week']
+                    && Schedule::timesOverlap($a['starts_at'], $a['ends_at'], $b['starts_at'], $b['ends_at'])) {
                     $conflicts[] = [
                         'slot' => $this->formatSlot(...$a),
                         'other' => $this->formatSlot(...$b),
@@ -240,10 +241,6 @@ class ScheduleChangeService
             ->get();
 
         return $students->map(function (Student $student) use ($changed, $proposed, $groupIds) {
-            $otherSchedules = $student->activeEnrollments
-                ->pluck('schedule')
-                ->filter(fn ($s) => $s && ! in_array($s->id, $groupIds));
-
             $issues = [];
 
             foreach ($changed as $schedule) {
@@ -253,16 +250,12 @@ class ScheduleChangeService
                     $issues[] = ['type' => 'unavailable'] + $this->formatSlot(...$to);
                 }
 
-                foreach ($otherSchedules as $other) {
-                    $otherSlot = ['starts_at' => $other->starts_at, 'ends_at' => $other->ends_at];
-
-                    if ((int) $other->day_of_week === $to['day_of_week'] && $this->overlaps($to, $otherSlot)) {
-                        $issues[] = ['type' => 'overlap'] + $this->formatSlot(...$to) + [
-                            'other' => [
-                                'course_name' => $other->course->name,
-                            ] + $this->formatSlot((int) $other->day_of_week, $other->starts_at, $other->ends_at),
-                        ];
-                    }
+                foreach ($student->conflictingSchedules($to['day_of_week'], $to['starts_at'], $to['ends_at'], $groupIds) as $other) {
+                    $issues[] = ['type' => 'overlap'] + $this->formatSlot(...$to) + [
+                        'other' => [
+                            'course_name' => $other->course->name,
+                        ] + $this->formatSlot((int) $other->day_of_week, $other->starts_at, $other->ends_at),
+                    ];
                 }
             }
 
@@ -277,15 +270,6 @@ class ScheduleChangeService
                     ->all(),
             ] : null;
         })->filter()->values()->all();
-    }
-
-    /**
-     * @param  array{starts_at: string, ends_at: string}  $a
-     * @param  array{starts_at: string, ends_at: string}  $b
-     */
-    private function overlaps(array $a, array $b): bool
-    {
-        return $a['starts_at'] < $b['ends_at'] && $a['ends_at'] > $b['starts_at'];
     }
 
     private function formatSlot(int $day_of_week, string $starts_at, string $ends_at): array
