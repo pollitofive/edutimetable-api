@@ -157,10 +157,40 @@ class EnrollmentService
         return $query->paginate($perPage);
     }
 
+    /**
+     * A status change applies to the whole schedule group (every day of it), like
+     * enrolling and dropping do. Reactivating goes through the same checks as a new
+     * enrollment (spots, availability, overlaps); notes only touch the given row.
+     */
     public function updateEnrollment(int $id, array $data): StudentEnrollment
     {
-        $enrollment = StudentEnrollment::with(['student', 'schedule.course', 'schedule.teacher'])->findOrFail($id);
-        $enrollment->update($data);
+        $enrollment = StudentEnrollment::with('schedule')->findOrFail($id);
+
+        DB::transaction(function () use ($enrollment, $data) {
+            $status = $data['status'] ?? $enrollment->status;
+
+            if ($status !== $enrollment->status) {
+                $scheduleIds = $this->groupSchedules($enrollment->schedule)->pluck('id');
+
+                if ($status === 'active') {
+                    // Days of the group the student already attends are left as they are
+                    $activeIds = StudentEnrollment::where('student_id', $enrollment->student_id)
+                        ->whereIn('schedule_id', $scheduleIds)
+                        ->where('status', 'active')
+                        ->pluck('schedule_id');
+
+                    $this->createEnrollments($enrollment->student_id, $scheduleIds->diff($activeIds)->values()->all());
+                } else {
+                    StudentEnrollment::where('student_id', $enrollment->student_id)
+                        ->whereIn('schedule_id', $scheduleIds)
+                        ->update(['status' => $status]);
+                }
+            }
+
+            if (array_key_exists('notes', $data)) {
+                $enrollment->update(['notes' => $data['notes']]);
+            }
+        });
 
         return $enrollment->fresh(['student', 'schedule.course', 'schedule.teacher']);
     }
