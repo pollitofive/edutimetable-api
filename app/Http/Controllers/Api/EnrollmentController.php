@@ -84,7 +84,14 @@ class EnrollmentController extends Controller
 
     public function update(UpdateEnrollmentRequest $request, int $id): JsonResponse
     {
-        $enrollment = $this->service->updateEnrollment($id, $request->validated());
+        try {
+            $enrollment = $this->service->updateEnrollment($id, $request->validated());
+        } catch (ValidationException $e) {
+            return response()->json(
+                ['message' => collect($e->errors())->flatten()->first()],
+                422
+            );
+        }
 
         return response()->json($enrollment);
     }

@@ -121,6 +121,48 @@ describe('GET /enrollments', function () {
 });
 
 describe('PATCH /enrollments/{id}', function () {
+    beforeEach(function () {
+        foreach ([1, 3] as $day) {
+            StudentAvailability::factory()->create([
+                'student_id' => $this->student->id,
+                'day_of_week' => $day,
+                'start_time' => '08:00',
+                'end_time' => '20:00',
+            ]);
+        }
+
+        $this->schedule->update(['group_id' => 'group-1', 'capacity' => 5]);
+        $this->sibling = Schedule::factory()->create([
+            'course_id' => $this->course->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 3,
+            'starts_at' => '09:00',
+            'ends_at' => '11:00',
+            'group_id' => 'group-1',
+            'capacity' => 5,
+        ]);
+
+        // Both days of the group with the given status; returns the first day's enrollment
+        $this->enrollInGroup = function (string $status) {
+            StudentEnrollment::factory()->create([
+                'student_id' => $this->student->id,
+                'schedule_id' => $this->sibling->id,
+                'status' => $status,
+            ]);
+
+            return StudentEnrollment::factory()->create([
+                'student_id' => $this->student->id,
+                'schedule_id' => $this->schedule->id,
+                'status' => $status,
+            ]);
+        };
+
+        $this->groupStatuses = fn () => StudentEnrollment::where('student_id', $this->student->id)
+            ->whereIn('schedule_id', [$this->schedule->id, $this->sibling->id])
+            ->pluck('status', 'schedule_id')
+            ->all();
+    });
+
     it('updates status and notes', function () {
         $enrollment = StudentEnrollment::factory()->create([
             'student_id' => $this->student->id,
@@ -141,6 +183,94 @@ describe('PATCH /enrollments/{id}', function () {
             ]);
 
         expect($enrollment->fresh()->status)->toBe('active');
+    });
+
+    it('reactivates every day of the group', function () {
+        $enrollment = ($this->enrollInGroup)('dropped');
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active'])->assertOk();
+
+        expect(($this->groupStatuses)())->toBe([
+            $this->schedule->id => 'active',
+            $this->sibling->id => 'active',
+        ]);
+    });
+
+    it('reactivates only the days of the group that were not active', function () {
+        $enrollment = ($this->enrollInGroup)('dropped');
+        StudentEnrollment::where('schedule_id', $this->sibling->id)->update(['status' => 'active']);
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active'])->assertOk();
+
+        expect(array_values(($this->groupStatuses)()))->toBe(['active', 'active']);
+    });
+
+    it('rejects reactivating when a day of the group has no spots left', function () {
+        $enrollment = ($this->enrollInGroup)('dropped');
+        $this->sibling->update(['capacity' => 1]);
+        StudentEnrollment::factory()->active()->create([
+            'student_id' => Student::factory()->create()->id,
+            'schedule_id' => $this->sibling->id,
+        ]);
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active'])
+            ->assertStatus(422)
+            ->assertJson(['message' => __('enrollment.no_spots')]);
+
+        expect(array_values(($this->groupStatuses)()))->toBe(['dropped', 'dropped']);
+    });
+
+    it('rejects reactivating when the group overlaps another course of the student', function () {
+        $enrollment = ($this->enrollInGroup)('dropped');
+        $other = Schedule::factory()->create([
+            'course_id' => Course::factory()->create(['name' => 'French 201'])->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 3,
+            'starts_at' => '10:00',
+            'ends_at' => '12:00',
+        ]);
+        StudentEnrollment::factory()->active()->create([
+            'student_id' => $this->student->id,
+            'schedule_id' => $other->id,
+        ]);
+
+        $response = $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active']);
+
+        $response->assertStatus(422);
+        expect($response->json('message'))->toContain('French 201')
+            ->and(array_values(($this->groupStatuses)()))->toBe(['dropped', 'dropped']);
+    });
+
+    it('rejects reactivating outside the student availability', function () {
+        $enrollment = ($this->enrollInGroup)('completed');
+        $this->sibling->update(['starts_at' => '19:00', 'ends_at' => '21:00']);
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active'])->assertStatus(422);
+
+        expect(array_values(($this->groupStatuses)()))->toBe(['completed', 'completed']);
+    });
+
+    it('applies a non-active status to every day of the group', function () {
+        $enrollment = ($this->enrollInGroup)('active');
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'dropped'])->assertOk();
+
+        expect(array_values(($this->groupStatuses)()))->toBe(['dropped', 'dropped']);
+    });
+
+    it('updates only the notes without revalidating or touching the group', function () {
+        $enrollment = ($this->enrollInGroup)('active');
+        $this->schedule->update(['capacity' => 1]);
+        StudentEnrollment::factory()->active()->create([
+            'student_id' => Student::factory()->create()->id,
+            'schedule_id' => $this->schedule->id,
+        ]);
+
+        $this->patchJson("/api/enrollments/{$enrollment->id}", ['status' => 'active', 'notes' => 'Only notes'])
+            ->assertOk()
+            ->assertJson(['notes' => 'Only notes']);
+
+        expect(StudentEnrollment::where('schedule_id', $this->sibling->id)->value('notes'))->not->toBe('Only notes');
     });
 
     it('rejects an invalid status', function () {
