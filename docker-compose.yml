@@ -3,6 +3,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+            target: dev
         container_name: edutimetable_app
         volumes:
             - ./:/var/www
@@ -48,6 +49,7 @@ services:
         build:
             context: ../edutimetable-front
             dockerfile: Dockerfile
+            target: dev
         container_name: edutimetable_vue_app
         ports:
             - "3537:3537"
