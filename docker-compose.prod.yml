@@ -1,0 +1,67 @@
+# Compose de staging/prod (VPS). Todo lo que cambia entre entornos sale del .env
+# del directorio del deploy: COMPOSE_PROJECT_NAME (edutimetable-staging-api /
+# edutimetable-prod-api), API_DOMAIN, credenciales de DB, etc.
+#
+# Sin puertos publicados: el único punto de entrada es Traefik (en el VPS corre
+# con network_mode: host y llega a los contenedores por su IP en la red interna).
+# Ojo: Docker se saltea ufw para los puertos publicados, por eso no hay ninguno.
+#
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+    app:
+        build:
+            context: .
+            target: prod
+        restart: unless-stopped
+        env_file: .env
+        volumes:
+            - storage:/var/www/storage
+        depends_on:
+            db:
+                condition: service_healthy
+        networks:
+            - internal
+
+    web:
+        build:
+            context: .
+            target: web
+        restart: unless-stopped
+        depends_on:
+            - app
+        networks:
+            - internal
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${API_DOMAIN}`)"
+            - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure"
+            - "traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsencrypt"
+            - "traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80"
+
+    db:
+        image: mysql:8.0
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        volumes:
+            - db_data:/var/lib/mysql
+        healthcheck:
+            # Por TCP (127.0.0.1) y no por socket: durante la inicialización MySQL levanta
+            # un server temporal solo con socket, y "localhost" daba healthy antes de tiempo.
+            test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+        networks:
+            - internal
+
+networks:
+    internal:
+
+volumes:
+    storage:
+    db_data:
