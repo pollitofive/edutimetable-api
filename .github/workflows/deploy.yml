@@ -1,0 +1,40 @@
+# Push a feature/* o fix/* → staging. Push a main → prod, frenado hasta que se
+# aprueba el environment "production" (required reviewer).
+#
+# Cada environment tiene su secret DEPLOY_SSH_KEY: una llave del usuario `deploy`
+# del VPS con comando forzado (/opt/deploy/gate.sh). La de staging no puede
+# deployar a prod; la de prod solo se entrega tras la aprobación y solo a main
+# (regla de "deployment branches" del environment). Ver ops/vps/README.md.
+name: Deploy
+
+on:
+  push:
+    branches: ['feature/**', 'fix/**', main]
+
+env:
+  COMPONENT: api
+  VPS: deploy@82.25.93.70
+  VPS_HOST_KEY: 82.25.93.70 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZC7NZzC6B5X+kGQzbV3E5b6v43CoKyazr8O4IQROvG
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ github.ref_name == 'main' && 'https://api.edutimetable.82-25-93-70.sslip.io/up' || 'https://api.staging.edutimetable.82-25-93-70.sslip.io/up' }}
+    concurrency:
+      group: deploy-${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+      cancel-in-progress: false
+    steps:
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          TARGET_ENV: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_HOST_KEY" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes \
+            "$VPS" deploy "$COMPONENT" "$TARGET_ENV" "$GITHUB_SHA"

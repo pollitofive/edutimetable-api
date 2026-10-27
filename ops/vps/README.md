@@ -30,6 +30,21 @@ command="/opt/deploy/gate.sh prod",no-pty,no-port-forwarding,no-agent-forwarding
 
 Ojo: `deploy` está en el grupo docker, que equivale a root en la práctica. Lo que limita a las llaves es el comando forzado de sshd, no los permisos de Unix.
 
+## GitHub Actions
+
+`.github/workflows/deploy.yml` (igual en los dos repos, cambia `COMPONENT`) corre `ssh deploy@vps deploy <componente> <env> <sha>`.
+
+En cada repo, Settings → Environments:
+
+| Environment  | Secret `DEPLOY_SSH_KEY`    | Protección                                           |
+|--------------|----------------------------|------------------------------------------------------|
+| `staging`    | llave `gh-actions-staging` | ninguna                                              |
+| `production` | llave `gh-actions-prod`    | required reviewer + deployment branches: solo `main` |
+
+La regla de branches es la que impide que una rama cambie el workflow para pedir el environment `production`: sin ella, el único freno sería la aprobación.
+
+La host key del VPS está fija en el workflow (`VPS_HOST_KEY`). Si se reinstala el server, actualizarla en los dos repos.
+
 ## Instalar un entorno desde cero
 
 ```bash
