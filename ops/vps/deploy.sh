@@ -76,7 +76,14 @@ release() {
 }
 
 if [ "$COMPONENT" = api ] && [ "$ENVIRONMENT" = prod ]; then
-    "$OPS/backup-db.sh" prod "pre-deploy-${TARGET:0:7}"
+    # Sin volumen de la DB es el primer deploy y no hay nada que respaldar. Si el volumen
+    # existe y la DB no responde, backup-db.sh falla y el deploy se corta: nunca sin backup.
+    PROJECT="$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env)"
+    if docker volume inspect "${PROJECT}_db_data" >/dev/null 2>&1; then
+        "$OPS/backup-db.sh" prod "pre-deploy-${TARGET:0:7}"
+    else
+        echo "sin volumen ${PROJECT}_db_data: primer deploy, no hay backup que hacer"
+    fi
 fi
 
 if release "$TARGET" && healthcheck; then
