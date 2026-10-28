@@ -43,6 +43,8 @@ En cada repo, Settings → Environments:
 
 La regla de branches es la que impide que una rama cambie el workflow para pedir el environment `production`: sin ella, el único freno sería la aprobación.
 
+Un push que solo toca `ops/**` no dispara deploy (`paths-ignore`). Si cambian scripts, correr `install.sh` **antes** de pushear `main`: si no, un deploy que arranque en ese momento corre con el script viejo.
+
 La host key del VPS está fija en el workflow (`VPS_HOST_KEY`). Si se reinstala el server, actualizarla en los dos repos.
 
 ## Instalar un entorno desde cero
@@ -65,7 +67,7 @@ git clone github-edutimetable-front:pollitofive/edutimetable-front.git /srv/edut
 ## Backups
 
 - `deploy.sh` hace un dump antes de migrar en prod.
-- Cron de root, diario: `offsite-backup.sh` hace un dump de prod, lo sube a Google Drive cifrado (rclone `gcrypt`) y mantiene 7 diarios y 4 semanales.
+- Cron de root, diario (`/etc/cron.d/edutimetable-backup`, 03:30 UTC): `offsite-backup.sh` hace un dump de prod, lo sube a Google Drive cifrado (rclone `gcrypt`) junto con los `.env` de prod, y mantiene 7 diarios y 4 semanales. Log: `/var/log/deploy/offsite-backup.log`.
 - La clave de `gcrypt` está en el gestor de contraseñas. Sin esa clave los backups no se pueden leer.
 
 Restore:

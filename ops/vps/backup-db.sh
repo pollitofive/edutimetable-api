@@ -12,9 +12,12 @@ ENVIRONMENT="${1:-}"; TAG="${2:-manual}"
 [[ "$ENVIRONMENT" =~ ^(staging|prod)$ ]] || { echo "uso: backup-db.sh <staging|prod> [etiqueta]" >&2; exit 1; }
 [[ "$TAG" =~ ^[A-Za-z0-9._-]{1,60}$ ]] || { echo "etiqueta inválida" >&2; exit 1; }
 
+# Con sudo -u deploy el cwd puede ser un home ajeno (/root en el cron) y find falla
+cd /
 DIR="/srv/backups/edutimetable/$ENVIRONMENT"
 mkdir -p "$DIR"
 OUT="$DIR/$(date +%Y%m%d-%H%M%S)-$TAG.sql.gz"
+trap 'rm -f "$OUT.tmp"' EXIT
 
 docker compose --project-directory "/srv/edutimetable/$ENVIRONMENT/api" \
     -f /opt/deploy/compose/api/docker-compose.prod.yml exec -T db sh -c \
