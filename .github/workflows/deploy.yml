@@ -10,6 +10,8 @@ name: Deploy
 on:
   push:
     branches: ['feature/**', 'fix/**', main]
+    # Los scripts del server no viajan con el deploy: se instalan con install.sh
+    paths-ignore: ['ops/**']
 
 env:
   COMPONENT: api

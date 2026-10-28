@@ -19,4 +19,5 @@ install -m 644 -o root -g root "$API/docker-compose.prod.yml" /opt/deploy/compos
 install -m 644 -o root -g root "$FRONT/docker-compose.prod.yml" "$FRONT/docker-compose.staging.yml" /opt/deploy/compose/front/
 
 install -d -m 755 -o deploy -g deploy /srv/backups /srv/backups/edutimetable /var/log/deploy
-echo "instalado desde api@$(git -C "$API" rev-parse --short HEAD) front@$(git -C "$FRONT" rev-parse --short HEAD)"
+rev() { git -C "$1" rev-parse --short HEAD 2>/dev/null || echo "sin-git"; }
+echo "instalado desde api@$(rev "$API") front@$(rev "$FRONT")"
