@@ -69,6 +69,7 @@ git clone github-edutimetable-front:pollitofive/edutimetable-front.git /srv/edut
 - `deploy.sh` hace un dump antes de migrar en prod.
 - Cron de root, diario (`/etc/cron.d/edutimetable-backup`, 03:30 UTC): `offsite-backup.sh` hace un dump de prod, lo sube a Google Drive cifrado (rclone `gcrypt`) junto con los `.env` de prod, y mantiene 7 diarios y 4 semanales. Log: `/var/log/deploy/offsite-backup.log`.
 - La clave de `gcrypt` está en el gestor de contraseñas. Sin esa clave los backups no se pueden leer.
+- Monitoreo con healthchecks.io: `offsite-backup.sh` hace ping al empezar y al terminar, con el código de salida y el final del log. Si falla o no corre en el día, llega un mail. La URL de ping está en `/etc/deploy/healthchecks-url` (root, 600) y no en el repo.
 
 Restore:
 

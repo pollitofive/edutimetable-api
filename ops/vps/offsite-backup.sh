@@ -5,7 +5,17 @@
 # También sube los .env de prod (APP_KEY y credenciales): sin ellos el dump solo no
 # alcanza para reconstruir el server.
 set -euo pipefail
-exec >> /var/log/deploy/offsite-backup.log 2>&1
+LOG=/var/log/deploy/offsite-backup.log
+exec >> "$LOG" 2>&1
+
+# Monitoreo con healthchecks.io: aviso por mail si el backup falla o no corre.
+# La URL de ping no está en el repo: va en /etc/deploy/healthchecks-url (root, 600).
+# Sin ese archivo el backup corre igual, pero sin aviso.
+HC_URL="$(cat /etc/deploy/healthchecks-url 2>/dev/null || true)"
+hc() { [ -z "$HC_URL" ] || curl -fsS -m 10 --retry 3 -o /dev/null "$HC_URL$1" "${@:2}" || true; }
+# El código de salida va en la URL (0 = OK, otro = falla), con el final del log de cuerpo.
+trap 'hc "/$?" --data-raw "$(tail -n 20 "$LOG")"' EXIT
+hc /start
 
 DEST=gcrypt:edutimetable/prod
 OUT="$(sudo -u deploy /opt/deploy/backup-db.sh prod daily | sed -n 's/^backup: \(.*\) (.*/\1/p')"
