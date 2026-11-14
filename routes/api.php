@@ -11,6 +11,8 @@ Route::post('/login-token', [AuthController::class, 'loginToken']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::patch('/me', [AuthController::class, 'updateMe']);
+    Route::put('/me/password', [AuthController::class, 'updatePassword']);
     Route::post('/logout-token', [AuthController::class, 'logoutToken']);
 
     // Protected routes that require business context
