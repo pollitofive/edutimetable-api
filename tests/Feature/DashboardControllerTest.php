@@ -48,7 +48,7 @@ it('returns the dashboard structure', function () {
             'totals' => ['active_students', 'courses', 'teachers', 'active_enrollments'],
             'courses_with_capacity' => [
                 ['group_id', 'schedule_id', 'course' => ['id', 'name'], 'track' => ['id', 'name'], 'level',
-                    'teachers', 'slots' => [['day_of_week', 'starts_at', 'ends_at']], 'capacity', 'enrolled', 'available_spots'],
+                    'teachers' => [['id', 'name']], 'slots' => [['day_of_week', 'starts_at', 'ends_at']], 'capacity', 'enrolled', 'available_spots'],
             ],
             'teacher_load' => [['teacher' => ['id', 'name'], 'weekly_hours', 'active_students']],
         ]);
@@ -73,8 +73,8 @@ it('counts students and enrollments once per course group, ignoring non-active o
         'capacity' => 3,
         'enrolled' => 2,
         'available_spots' => 1,
-        'teachers' => ['Ana'],
     ]);
+    expect($response->json('courses_with_capacity.0.teachers'))->toBe([['id' => $this->teacher->id, 'name' => 'Ana']]);
     expect($response->json('courses_with_capacity.0.slots'))->toHaveCount(2);
 });
 

@@ -56,7 +56,9 @@ class DashboardService
                     'course' => ['id' => $first->course->id, 'name' => $first->course->name],
                     'track' => ['id' => $first->course->courseLevel->track->id, 'name' => $first->course->courseLevel->track->name],
                     'level' => $first->course->courseLevel->name,
-                    'teachers' => $slots->pluck('teacher.name')->unique()->values()->toArray(),
+                    'teachers' => $slots->pluck('teacher')->unique('id')
+                        ->map(fn ($teacher) => ['id' => $teacher->id, 'name' => $teacher->name])
+                        ->values()->toArray(),
                     'slots' => $slots->map(fn (Schedule $s) => [
                         'day_of_week' => $s->day_of_week,
                         'starts_at' => substr($s->starts_at, 0, 5),
