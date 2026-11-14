@@ -641,3 +641,71 @@ describe('POST /enrollments/{id}/drop', function () {
         $this->postJson("/api/enrollments/{$enrollment->id}/drop")->assertStatus(404);
     });
 });
+
+describe('GET /enrollments/schedules student filter', function () {
+    beforeEach(function () {
+        $this->otherSchedule = Schedule::factory()->create([
+            'course_id' => Course::factory()->create()->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 2,
+            'starts_at' => '09:00',
+            'ends_at' => '11:00',
+        ]);
+        $this->droppedSchedule = Schedule::factory()->create([
+            'course_id' => Course::factory()->create()->id,
+            'teacher_id' => $this->teacher->id,
+            'day_of_week' => 3,
+            'starts_at' => '09:00',
+            'ends_at' => '11:00',
+        ]);
+
+        StudentEnrollment::factory()->active()->create([
+            'student_id' => $this->student->id,
+            'schedule_id' => $this->schedule->id,
+        ]);
+        StudentEnrollment::factory()->create([
+            'student_id' => $this->student->id,
+            'schedule_id' => $this->droppedSchedule->id,
+            'status' => 'dropped',
+        ]);
+        // Another student in the other schedule
+        StudentEnrollment::factory()->active()->create([
+            'schedule_id' => $this->otherSchedule->id,
+        ]);
+    });
+
+    it('returns only the schedules the student actively attends', function () {
+        $ids = collect($this->getJson("/api/enrollments/schedules?student_id={$this->student->id}")->assertOk()->json())
+            ->pluck('id');
+
+        expect($ids->all())->toBe([$this->schedule->id]);
+    });
+
+    it('returns every schedule without the filter', function () {
+        expect($this->getJson('/api/enrollments/schedules')->assertOk()->json())->toHaveCount(3);
+    });
+
+    it('combines with the other filters', function () {
+        $this->getJson("/api/enrollments/schedules?student_id={$this->student->id}&days_of_week[]=2")
+            ->assertOk()
+            ->assertExactJson([]);
+    });
+
+    it('returns nothing for a student without active enrollments', function () {
+        $idle = Student::factory()->create();
+
+        $this->getJson("/api/enrollments/schedules?student_id={$idle->id}")
+            ->assertOk()
+            ->assertExactJson([]);
+    });
+
+    it('rejects a student of another business', function () {
+        app(\App\Services\CurrentBusiness::class)->setId(\App\Models\Business::factory()->create()->id);
+        $foreign = Student::factory()->create();
+        app(\App\Services\CurrentBusiness::class)->setId($this->business->id);
+
+        $this->getJson("/api/enrollments/schedules?student_id={$foreign->id}")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['student_id']);
+    });
+});
