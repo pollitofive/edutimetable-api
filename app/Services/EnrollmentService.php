@@ -351,6 +351,7 @@ class EnrollmentService
                     'id' => $e->student->id,
                     'name' => $e->student->name,
                     'email' => $e->student->email,
+                    'phone' => $e->student->phone,
                     'course_level' => $e->student->courseLevel ? [
                         'name' => $e->student->courseLevel->name,
                         'track' => ['id' => $e->student->courseLevel->track->id, 'name' => $e->student->courseLevel->track->name],
