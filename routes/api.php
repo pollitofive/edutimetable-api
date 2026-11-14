@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\ScheduleChangeController;
 use Illuminate\Http\Request;
@@ -18,6 +19,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+
+        Route::get('/dashboard', [DashboardController::class, 'index']);
 
         // Enrollment REST API
         Route::get('/enrollments/schedules', [EnrollmentController::class, 'schedules']);
