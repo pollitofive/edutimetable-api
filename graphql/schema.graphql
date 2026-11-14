@@ -250,52 +250,52 @@ input UpdateTrackInput {
 }
 
 input CreateCourseLevelInput {
-  track_id: ID
+  track_id: ID @rules(apply: ["exists_in_business:tracks"])
   track_name: String
   name: String!
   slug: String!
   sort_order: Int!
-  previous_level_id: ID
+  previous_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
   texts: String
 }
 
 input UpdateCourseLevelInput {
-  track_id: ID
+  track_id: ID @rules(apply: ["exists_in_business:tracks"])
   track_name: String
   name: String
   slug: String
   sort_order: Int
-  previous_level_id: ID
+  previous_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
   texts: String
 }
 
 input CreateCourseInput {
   name: String!
-  course_level_id: ID!
+  course_level_id: ID! @rules(apply: ["required", "exists_in_business:course_levels"])
 }
 
 input UpdateCourseInput {
   name: String
-  course_level_id: ID
+  course_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
 }
 
 input CreateStudentInput {
   name: String!
   email: String!
   phone: String
-  course_level_id: ID!
+  course_level_id: ID! @rules(apply: ["required", "exists_in_business:course_levels"])
 }
 
 input UpdateStudentInput {
   name: String
   email: String
   phone: String
-  course_level_id: ID
+  course_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
 }
 
 input CreateScheduleInput {
-  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
-  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
+  course_id: ID! @rules(apply: ["required", "exists_in_business:courses"])
+  teacher_id: ID! @rules(apply: ["required", "exists_in_business:teachers"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
@@ -304,8 +304,8 @@ input CreateScheduleInput {
 }
 
 input UpdateScheduleInput {
-  course_id: ID @rules(apply: ["exists:courses,id"])
-  teacher_id: ID @rules(apply: ["exists:teachers,id"])
+  course_id: ID @rules(apply: ["exists_in_business:courses"])
+  teacher_id: ID @rules(apply: ["exists_in_business:teachers"])
   day_of_week: Int @rules(apply: ["integer", "min:0", "max:6"])
   starts_at: String @rules(apply: ["date_format:H:i"])
   ends_at: String @rules(apply: ["date_format:H:i"])
@@ -315,14 +315,14 @@ input UpdateScheduleInput {
 }
 
 input CreateStudentAvailabilityInput {
-  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  student_id: ID! @rules(apply: ["required", "exists_in_business:students"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   start_time: String! @rules(apply: ["required", "date_format:H:i", "before:end_time"])
   end_time: String! @rules(apply: ["required", "date_format:H:i", "after:start_time"])
 }
 
 input UpdateStudentAvailabilityInput {
-  student_id: ID @rules(apply: ["exists:students,id"])
+  student_id: ID @rules(apply: ["exists_in_business:students"])
   day_of_week: Int @rules(apply: ["integer", "min:0", "max:6"])
   start_time: String @rules(apply: ["date_format:H:i"])
   end_time: String @rules(apply: ["date_format:H:i"])
@@ -335,17 +335,17 @@ input StudentAvailabilitySlotInput {
 }
 
 input BulkCreateStudentAvailabilitiesInput {
-  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  student_id: ID! @rules(apply: ["required", "exists_in_business:students"])
   availabilities: [StudentAvailabilitySlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 
 input BulkUpdateStudentAvailabilitiesInput {
-  student_id: ID! @rules(apply: ["required", "exists:students,id"])
+  student_id: ID! @rules(apply: ["required", "exists_in_business:students"])
   availabilities: [StudentAvailabilitySlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 
 input ScheduleSlotInput {
-  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
+  teacher_id: ID! @rules(apply: ["required", "exists_in_business:teachers"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
@@ -354,21 +354,21 @@ input ScheduleSlotInput {
 """ Like ScheduleSlotInput, plus the id of the existing schedule being edited (omit it for a new slot) """
 input UpdateScheduleSlotInput {
   id: ID
-  teacher_id: ID! @rules(apply: ["required", "exists:teachers,id"])
+  teacher_id: ID! @rules(apply: ["required", "exists_in_business:teachers"])
   day_of_week: Int! @rules(apply: ["required", "integer", "min:0", "max:6"])
   starts_at: String! @rules(apply: ["required", "date_format:H:i"])
   ends_at: String! @rules(apply: ["required", "date_format:H:i"])
 }
 
 input BulkCreateSchedulesInput {
-  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  course_id: ID! @rules(apply: ["required", "exists_in_business:courses"])
   description: String!
   capacity: Int @rules(apply: ["integer", "min:1"])
   schedules: [ScheduleSlotInput!]! @rules(apply: ["required", "array", "min:1"])
 }
 
 input BulkUpdateSchedulesInput {
-  course_id: ID! @rules(apply: ["required", "exists:courses,id"])
+  course_id: ID! @rules(apply: ["required", "exists_in_business:courses"])
   description: String!
   capacity: Int @rules(apply: ["integer", "min:1"])
   group_id: String
