@@ -18,8 +18,12 @@ class EnrollmentController extends Controller
 
     public function schedules(Request $request): JsonResponse
     {
+        $request->validate([
+            'student_id' => ['nullable', 'integer', 'exists_in_business:students'],
+        ]);
+
         $schedules = $this->service->getSchedules(
-            $request->only(['course_ids', 'teacher_ids', 'days_of_week', 'track_ids'])
+            $request->only(['course_ids', 'teacher_ids', 'days_of_week', 'track_ids', 'student_id'])
         );
 
         return response()->json($schedules);

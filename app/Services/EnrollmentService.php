@@ -38,6 +38,11 @@ class EnrollmentService
             $query->whereHas('course.courseLevel', fn ($q) => $q->whereIn('track_id', (array) $filters['track_ids']));
         }
 
+        // Only the schedules the student actively attends
+        if (! empty($filters['student_id'])) {
+            $query->whereHas('enrollments', fn ($q) => $q->where('student_id', $filters['student_id'])->where('status', 'active'));
+        }
+
         $schedules = $query->get();
 
         // Whole groups, regardless of the filters, so the client knows every
