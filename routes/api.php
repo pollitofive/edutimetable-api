@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
 use App\Http\Controllers\Api\ScheduleChangeController;
+use App\Http\Controllers\Api\SearchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        // Quick search of the header (students, teachers and courses)
+        Route::get('/search', [SearchController::class, 'index']);
 
         // Enrollment REST API
         Route::get('/enrollments/schedules', [EnrollmentController::class, 'schedules']);
