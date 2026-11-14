@@ -709,3 +709,19 @@ describe('GET /enrollments/schedules student filter', function () {
             ->assertJsonValidationErrors(['student_id']);
     });
 });
+
+it('includes the contact details of the enrolled students in the calendar', function () {
+    $this->student->update(['email' => 'ana@example.com', 'phone' => '1122334455']);
+    StudentEnrollment::factory()->active()->create([
+        'student_id' => $this->student->id,
+        'schedule_id' => $this->schedule->id,
+    ]);
+
+    $schedule = collect($this->getJson('/api/enrollments/schedules')->assertOk()->json())
+        ->firstWhere('id', $this->schedule->id);
+
+    expect($schedule['active_enrollments'][0]['student'])->toMatchArray([
+        'email' => 'ana@example.com',
+        'phone' => '1122334455',
+    ]);
+});
