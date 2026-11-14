@@ -29,13 +29,14 @@ class Student extends Model
     }
 
     /**
-     * Scope to search students by name OR email
+     * Scope to search students by name, email or phone
      */
     public function scopeSearch(Builder $query, string $term): Builder
     {
         return $query->where(function (Builder $q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-                ->orWhere('email', 'like', "%{$term}%");
+                ->orWhere('email', 'like', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%");
         });
     }
 
