@@ -1,6 +1,8 @@
 # Deploy de edutimetable en el VPS
 
-Flujo: push a `feature/*` o `fix/*` → GitHub Actions deploya a **staging**. Merge a `main` → job de prod frenado hasta la aprobación manual (environment `production`) → **prod**.
+Flujo: push a `feature/*`, `fix/*`, `hotfix/*` o merge a `main` → GitHub Actions deploya a **staging**. Push de un tag `vX.Y.Z` (lo crea `/release`, con la misma versión en api y front) → job de prod frenado hasta la aprobación manual (environment `production`) → **prod**.
+
+Mergear a `main` no saca nada a prod: los cambios se acumulan en `main` hasta el próximo release.
 
 ## Piezas en el server
 
@@ -39,11 +41,20 @@ En cada repo, Settings → Environments:
 | Environment  | Secret `DEPLOY_SSH_KEY`    | Protección                                           |
 |--------------|----------------------------|------------------------------------------------------|
 | `staging`    | llave `gh-actions-staging` | ninguna                                              |
-| `production` | llave `gh-actions-prod`    | required reviewer + deployment branches: solo `main` |
+| `production` | llave `gh-actions-prod`    | required reviewer + deployment tags: solo `v*`       |
 
-La regla de branches es la que impide que una rama cambie el workflow para pedir el environment `production`: sin ella, el único freno sería la aprobación.
+La regla de tags es la que impide que una rama cambie el workflow para pedir el environment `production`: sin ella, el único freno sería la aprobación. Ojo: un tag `v*` puede apuntar a cualquier commit, incluso uno de una rama con el workflow modificado. Lo que frena eso es que solo el dueño del repo puede pushear y que prod siempre pide aprobación.
 
-Un push que solo toca `ops/**` no dispara deploy (`paths-ignore`). Si cambian scripts, correr `install.sh` **antes** de pushear `main`: si no, un deploy que arranque en ese momento corre con el script viejo.
+Un push a una rama que solo toca `ops/**` no dispara deploy (`paths-ignore`). Los tags no pasan por ese filtro: siempre deployan. Si cambian scripts o compose, correr `install.sh` **antes** de pushear `main` (staging) y, en todo caso, antes de tagear: si no, un deploy que arranque en ese momento corre con el script viejo.
+
+### Hotfix
+
+Si hay que arreglar prod y `main` tiene cambios sin liberar, no se tagea `main`:
+
+1. `git switch -c hotfix/<n>-<slug> vX.Y.Z` desde el último tag (en el repo afectado; si son los dos, en ambos).
+2. Fix, commit y push: la rama deploya a staging para probarla.
+3. Tag `vX.Y.(Z+1)` sobre la rama del hotfix (en los dos repos: la versión es conjunta; el repo sin cambios se tagea sobre su último tag) → prod con aprobación.
+4. Merge de la rama del hotfix a `main` para no perder el fix.
 
 La host key del VPS está fija en el workflow (`VPS_HOST_KEY`). Si se reinstala el server, actualizarla en los dos repos.
 

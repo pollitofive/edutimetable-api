@@ -1,16 +1,19 @@
-# Push a feature/* o fix/* → staging. Push a main → prod, frenado hasta que se
-# aprueba el environment "production" (required reviewer).
+# Push a feature/*, fix/*, hotfix/* o main → staging. Push de un tag v* → prod,
+# frenado hasta que se aprueba el environment "production" (required reviewer).
+# Los tags los crea /release; mergear a main ya no saca nada a prod.
 #
 # Cada environment tiene su secret DEPLOY_SSH_KEY: una llave del usuario `deploy`
 # del VPS con comando forzado (/opt/deploy/gate.sh). La de staging no puede
-# deployar a prod; la de prod solo se entrega tras la aprobación y solo a main
-# (regla de "deployment branches" del environment). Ver ops/vps/README.md.
+# deployar a prod; la de prod solo se entrega tras la aprobación y solo a tags v*
+# (regla de "deployment branches and tags" del environment). Ver ops/vps/README.md.
 name: Deploy
 
 on:
   push:
-    branches: ['feature/**', 'fix/**', main]
-    # Los scripts del server no viajan con el deploy: se instalan con install.sh
+    branches: ['feature/**', 'fix/**', 'hotfix/**', main]
+    tags: ['v*']
+    # Los scripts del server no viajan con el deploy: se instalan con install.sh.
+    # GitHub no evalúa paths en los push de tags: un tag siempre deploya.
     paths-ignore: ['ops/**']
 
 env:
@@ -23,16 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
-      url: ${{ github.ref_name == 'main' && 'https://api.edutimetable.82-25-93-70.sslip.io/up' || 'https://api.staging.edutimetable.82-25-93-70.sslip.io/up' }}
+      name: ${{ github.ref_type == 'tag' && 'production' || 'staging' }}
+      url: ${{ github.ref_type == 'tag' && 'https://api.edutimetable.82-25-93-70.sslip.io/up' || 'https://api.staging.edutimetable.82-25-93-70.sslip.io/up' }}
     concurrency:
-      group: deploy-${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+      group: deploy-${{ github.ref_type == 'tag' && 'prod' || 'staging' }}
       cancel-in-progress: false
     steps:
       - name: Deploy
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          TARGET_ENV: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+          TARGET_ENV: ${{ github.ref_type == 'tag' && 'prod' || 'staging' }}
         run: |
           install -d -m 700 ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
