@@ -3,8 +3,10 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EnrollmentController;
+use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\ScheduleChangeController;
 use App\Http\Controllers\Api\SearchController;
+use App\Services\Import\PersonImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,5 +44,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Schedule change simulator ("what if" + apply)
         Route::post('/schedule-changes/preview', [ScheduleChangeController::class, 'preview']);
         Route::post('/schedule-changes/apply', [ScheduleChangeController::class, 'apply']);
+
+        // Spreadsheet import of students and teachers: parse → preview → commit
+        Route::prefix('/imports/{type}')->whereIn('type', PersonImportService::TYPES)->group(function () {
+            Route::get('/template', [ImportController::class, 'template']);
+            Route::post('/parse', [ImportController::class, 'parse']);
+            Route::post('/preview', [ImportController::class, 'preview']);
+            Route::post('/commit', [ImportController::class, 'commit']);
+        });
     });
 });
