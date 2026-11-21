@@ -22,7 +22,7 @@ type Mutation {
     setDefaultBusiness(business_id: ID!): User @guard @field(resolver: "App\\GraphQL\\Mutations\\SetDefaultBusiness@__invoke")
 
     createTeacher(input: CreateTeacherInput! @spread): Teacher @guard @create
-    updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update
+    updateTeacher(id: ID!, input: UpdateTeacherInput! @spread): Teacher @guard @update @validator
     deleteTeacher(id: ID! @eq): Teacher @guard @delete
 
     createTrack(input: CreateTrackInput! @spread): Track @guard
@@ -43,7 +43,7 @@ type Mutation {
     deleteCourse(id: ID! @eq(key: "id")): Course @guard @delete(globalId: true)
 
     createStudent(input: CreateStudentInput! @spread): Student @guard @create
-    updateStudent(id: ID!, input: UpdateStudentInput! @spread): Student @guard @update
+    updateStudent(id: ID!, input: UpdateStudentInput! @spread): Student @guard @update @validator
     deleteStudent(id: ID! @eq(key: "id")): Student @guard @delete(globalId: true)
 
     createSchedule(input: CreateScheduleInput!): Schedule @guard
@@ -229,7 +229,7 @@ enum StudentEnrollmentStatus {
 }
 
 """ Inputs """
-input CreateTeacherInput {
+input CreateTeacherInput @validator {
   name: String!
   email: String!
   phone: String
@@ -279,18 +279,18 @@ input UpdateCourseInput {
   course_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
 }
 
-input CreateStudentInput {
+input CreateStudentInput @validator {
   name: String!
   email: String!
   phone: String
-  course_level_id: ID! @rules(apply: ["required", "exists_in_business:course_levels"])
+  course_level_id: ID!
 }
 
 input UpdateStudentInput {
   name: String
   email: String
   phone: String
-  course_level_id: ID @rules(apply: ["exists_in_business:course_levels"])
+  course_level_id: ID
 }
 
 input CreateScheduleInput {
