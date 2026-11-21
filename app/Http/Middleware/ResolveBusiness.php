@@ -4,6 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Services\CurrentBusiness;
 use Closure;
+use GraphQL\Error\SyntaxError;
+use GraphQL\Language\AST\DocumentNode;
+use GraphQL\Language\AST\FieldNode;
+use GraphQL\Language\AST\OperationDefinitionNode;
+use GraphQL\Language\Parser;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -20,17 +25,17 @@ class ResolveBusiness
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip business validation for queries that don't require business context
-        if ($this->shouldSkipBusinessValidation($request)) {
-            return $next($request);
-        }
-
-        // Guests can't have a business context. Reject them here instead of letting the
-        // request through: queries without @guard would run with no tenant scope at all.
+        // Guests can't have a business context. Reject them before anything else: queries
+        // without @guard would run with no tenant scope at all.
         if (! $request->user()) {
             return response()->json([
                 'errors' => [['message' => 'Unauthenticated.']],
             ], 401);
+        }
+
+        // Skip business validation for operations that don't require business context
+        if ($this->shouldSkipBusinessValidation($request)) {
+            return $next($request);
         }
 
         // Get business ID from X-Business-Id header
@@ -74,35 +79,86 @@ class ResolveBusiness
     }
 
     /**
+     * Root fields that can run without a business context. All of them are @guard'ed and only
+     * expose the authenticated user's own data.
+     */
+    private const EXEMPT_ROOT_FIELDS = [
+        'me',
+        'myBusinesses',
+        'setDefaultBusiness',
+    ];
+
+    /**
      * Determine if business validation should be skipped for this request.
+     *
+     * The operation name is chosen by the client, so it can't be trusted: "query me { teachers }"
+     * would skip the business context and run without tenant scope. Instead, parse the query
+     * and only skip when every root field of the executed operation is exempt.
      */
     private function shouldSkipBusinessValidation(Request $request): bool
     {
-        // Get the operation name from the GraphQL request
-        $operationName = $request->input('operationName', '');
+        // The exemption only applies to GraphQL: REST routes behind this middleware always need
+        // a business context, whatever comes in the query string
+        if (! $request->routeIs('graphql')) {
+            return false;
+        }
 
-        // If operationName is not provided, try to extract it from the query
-        if (empty($operationName)) {
-            $query = $request->input('query', '');
+        $query = $request->input('query');
 
-            // Try to extract named operation: "query myBusinesses {" or "mutation setDefaultBusiness("
-            if (preg_match('/(?:query|mutation)\s+(\w+)\s*[{(]/', $query, $matches)) {
-                $operationName = $matches[1];
+        // Batched requests (JSON array) or missing query: never exempt
+        if (! is_string($query) || trim($query) === '') {
+            return false;
+        }
+
+        try {
+            $document = Parser::parse($query, ['noLocation' => true]);
+        } catch (SyntaxError) {
+            return false;
+        }
+
+        $operation = $this->executedOperation($document, $request->input('operationName'));
+
+        if (! $operation) {
+            return false;
+        }
+
+        foreach ($operation->selectionSet->selections as $selection) {
+            // Fragment spreads / inline fragments at the root: don't try to resolve them
+            if (! $selection instanceof FieldNode) {
+                return false;
             }
-            // If no named operation, extract the root field: "query { me {" or "mutation { setDefaultBusiness("
-            elseif (preg_match('/(?:query|mutation)\s*\{\s*(\w+)/', $query, $matches)) {
-                $operationName = $matches[1];
+
+            if (! in_array($selection->name->value, self::EXEMPT_ROOT_FIELDS, true)) {
+                return false;
             }
         }
 
-        // List of queries/mutations that don't require business context
-        $exemptOperations = [
-            'myBusinesses',
-            'me',
-            'setDefaultBusiness',
-        ];
+        return true;
+    }
 
-        // Check for exact match of operation name
-        return in_array($operationName, $exemptOperations, true);
+    /**
+     * The operation GraphQL will execute: the one named by operationName, or the only one.
+     */
+    private function executedOperation(DocumentNode $document, mixed $operationName): ?OperationDefinitionNode
+    {
+        $operations = [];
+
+        foreach ($document->definitions as $definition) {
+            if ($definition instanceof OperationDefinitionNode) {
+                $operations[] = $definition;
+            }
+        }
+
+        if (is_string($operationName) && $operationName !== '') {
+            foreach ($operations as $operation) {
+                if ($operation->name?->value === $operationName) {
+                    return $operation;
+                }
+            }
+
+            return null;
+        }
+
+        return count($operations) === 1 ? $operations[0] : null;
     }
 }
