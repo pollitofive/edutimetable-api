@@ -93,8 +93,9 @@ class BusinessQueriesTest extends TestCase
 
         $response = $this->postJson('/api/graphql', ['query' => $query]);
 
-        $response->assertStatus(200)
-            ->assertJsonStructure(['errors']);
+        // ResolveBusiness rejects guests before reaching GraphQL
+        $response->assertStatus(401)
+            ->assertJson(['errors' => [['message' => 'Unauthenticated.']]]);
     }
 
     public function test_can_set_default_business(): void
@@ -163,8 +164,9 @@ class BusinessQueriesTest extends TestCase
 
         $response = $this->postJson('/api/graphql', ['query' => $mutation]);
 
-        $response->assertStatus(200)
-            ->assertJsonStructure(['errors']);
+        // ResolveBusiness rejects guests before reaching GraphQL
+        $response->assertStatus(401)
+            ->assertJson(['errors' => [['message' => 'Unauthenticated.']]]);
     }
 
     public function test_me_query_includes_default_business_id(): void
