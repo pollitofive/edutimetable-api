@@ -619,3 +619,54 @@ it('allows updating to different course', function () {
         ],
     ]);
 });
+
+describe('createSchedule capacity', function () {
+    $createMutation = function (string $capacityArg = '') {
+        return "
+            mutation {
+                createSchedule(input: {
+                    course_id: {$this->course->id}
+                    teacher_id: {$this->teacher->id}
+                    description: \"Test Schedule\"
+                    day_of_week: 1
+                    starts_at: \"09:00\"
+                    ends_at: \"10:00\"
+                    {$capacityArg}
+                }) {
+                    id
+                    capacity
+                }
+            }
+        ";
+    };
+
+    it('stores the capacity sent in createSchedule', function () use ($createMutation) {
+        $response = $this->postGraphQL(['query' => $createMutation->call($this, 'capacity: 12')]);
+
+        $response->assertJson([
+            'data' => [
+                'createSchedule' => [
+                    'capacity' => 12,
+                ],
+            ],
+        ]);
+
+        expect(Schedule::first()->capacity)->toBe(12);
+    });
+
+    it('uses the column default capacity when createSchedule omits it', function () use ($createMutation) {
+        $response = $this->postGraphQL(['query' => $createMutation->call($this)]);
+
+        $response->assertJsonMissingPath('errors');
+
+        expect(Schedule::first()->capacity)->toBe(5);
+    });
+
+    it('rejects an invalid capacity in createSchedule', function (int $capacity) use ($createMutation) {
+        $response = $this->postGraphQL(['query' => $createMutation->call($this, "capacity: {$capacity}")]);
+
+        $response->assertGraphQLValidationKeys(['input.capacity']);
+
+        expect(Schedule::count())->toBe(0);
+    })->with([0, -3]);
+});
