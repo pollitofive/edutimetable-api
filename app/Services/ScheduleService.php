@@ -43,7 +43,7 @@ class ScheduleService
     }
 
     /**
-     * @param  array  $data  ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null]
+     * @param  array  $data  ['day_of_week' => int 0..6, 'starts_at' => 'HH:MM', 'ends_at' => 'HH:MM', 'description' => string|null, 'capacity' => int|null]
      */
     public function createSchedule(int $courseId, int $teacherId, array $data): Schedule
     {
@@ -57,6 +57,7 @@ class ScheduleService
                 'starts_at' => ['required', 'date_format:H:i'],
                 'ends_at' => ['required', 'date_format:H:i'],
                 'description' => ['nullable', 'string'],
+                'capacity' => ['nullable', 'integer', 'min:1'],
             ]
         );
 
@@ -127,7 +128,7 @@ class ScheduleService
 
         // 6) Create with new group_id
         // business_id is set automatically by BelongsToBusiness trait
-        return Schedule::create([
+        $attributes = [
             'course_id' => $courseId,
             'teacher_id' => $teacherId,
             'day_of_week' => $data['day_of_week'],
@@ -135,7 +136,15 @@ class ScheduleService
             'ends_at' => $end->format('H:i:00'),
             'description' => $data['description'] ?? null,
             'group_id' => (string) Str::uuid(),
-        ]);
+        ];
+
+        // Optional - column defaults to 5
+        if (isset($data['capacity'])) {
+            $attributes['capacity'] = (int) $data['capacity'];
+        }
+
+        // fresh() so DB defaults (capacity) are present in the returned model
+        return Schedule::create($attributes)->fresh();
     }
 
     /**
