@@ -47,6 +47,26 @@ it('rejects an invalid email when creating a student', function () {
     expect(Student::count())->toBe(0);
 });
 
+it('rejects an email with a CRLF header injection when creating a student', function () {
+    $level = CourseLevel::factory()->create();
+
+    // Passed as a variable: a raw CRLF is not valid inside a GraphQL string literal.
+    $this->postGraphQL([
+        'query' => '
+            mutation ($input: CreateStudentInput!) {
+                createStudent(input: $input) { id email }
+            }
+        ',
+        'variables' => ['input' => [
+            'name' => 'Ana',
+            'email' => "ana@example.com\r\nBcc: x@example.com",
+            'course_level_id' => (string) $level->id,
+        ]],
+    ])->assertGraphQLValidationKeys(['input.email']);
+
+    expect(Student::count())->toBe(0);
+});
+
 it('rejects an email already used by another student of the business', function () {
     $existing = Student::factory()->create(['email' => 'ana@example.com']);
 

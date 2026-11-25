@@ -175,6 +175,7 @@ describe('preview', function () {
     })->with([
         'missing' => ['', 'required'],
         'invalid' => ['ana-sin-arroba', 'email'],
+        'crlf' => ["ana@example.com\r\nBcc: x@example.com", 'email'],
     ]);
 
     it('rejects rows whose level has no level assigned', function () {
