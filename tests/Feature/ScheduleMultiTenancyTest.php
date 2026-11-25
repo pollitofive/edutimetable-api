@@ -305,10 +305,7 @@ it('allows adjacent schedules (non-overlapping) for same teacher', function () {
     expect($schedule2)->toBeInstanceOf(Schedule::class);
 });
 
-// NOTE: This test is skipped because course overlap validation is currently DISABLED
-// to allow multiple teachers teaching the same course at the same time (parallel sections).
-// Uncomment this test if you enable course overlap validation in ScheduleService.
-it('prevents course overlap within same business', function () {
+it('allows the same course at the same time with another teacher (parallel sections)', function () {
     // Set context to business A
     app(CurrentBusiness::class)->setId($this->businessA->id);
 
@@ -330,7 +327,7 @@ it('prevents course overlap within same business', function () {
         ]
     );
 
-    // Create overlapping schedule with same course but different teacher (ALLOWED now)
+    // Overlapping schedule of the same course with a different teacher
     $schedule2 = $service->createSchedule(
         $course->id,
         $teacherB->id,
@@ -342,10 +339,10 @@ it('prevents course overlap within same business', function () {
         ]
     );
 
-    // Both schedules should exist
     expect($schedule1)->toBeInstanceOf(Schedule::class);
     expect($schedule2)->toBeInstanceOf(Schedule::class);
-})->skip('Course overlap validation is currently disabled');
+    expect(Schedule::where('course_id', $course->id)->count())->toBe(2);
+});
 
 it('allows same course at different times', function () {
     // Set context to business A
