@@ -6,7 +6,6 @@ use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
@@ -18,14 +17,26 @@ class Student extends Model
 
     protected $fillable = ['name', 'email', 'phone'];
 
-    protected $appends = ['level'];
+    /**
+     * The student's level in the given track, if they study it (one level per track).
+     * Uses the courseLevels relation, so eager load it.
+     */
+    public function levelInTrack(int $trackId): ?CourseLevel
+    {
+        return $this->courseLevels->firstWhere('track_id', $trackId);
+    }
 
     /**
-     * Get the level attribute (backwards compatibility)
+     * Replaces the student's levels. The pivot carries business_id for its composite FKs.
+     *
+     * @param  array<int|string>  $courseLevelIds
      */
-    public function getLevelAttribute(): ?string
+    public function syncCourseLevels(array $courseLevelIds): void
     {
-        return $this->courseLevel?->name;
+        $this->courseLevels()->syncWithPivotValues(
+            array_map('intval', $courseLevelIds),
+            ['business_id' => $this->business_id]
+        );
     }
 
     /**
@@ -41,21 +52,31 @@ class Student extends Model
     }
 
     /**
-     * Scope to filter students by the track of their courseLevel
+     * Scope to filter students who study the track (any of their levels)
      */
     public function scopeByTrack(Builder $query, int $trackId): Builder
     {
-        return $query->whereHas('courseLevel', function (Builder $q) use ($trackId) {
+        return $query->whereHas('courseLevels', function (Builder $q) use ($trackId) {
             $q->where('track_id', $trackId);
         });
     }
 
     /**
-     * Get the course level
+     * Scope to filter students who have the level
      */
-    public function courseLevel(): BelongsTo
+    public function scopeByCourseLevel(Builder $query, int $courseLevelId): Builder
     {
-        return $this->belongsTo(CourseLevel::class, 'course_level_id');
+        return $query->whereHas('courseLevels', fn (Builder $q) => $q->where('course_levels.id', $courseLevelId));
+    }
+
+    /**
+     * The student's levels, one per track they study
+     */
+    public function courseLevels(): BelongsToMany
+    {
+        return $this->belongsToMany(CourseLevel::class)
+            ->withTimestamps()
+            ->orderBy('course_levels.track_id');
     }
 
     public function availabilities(): HasMany

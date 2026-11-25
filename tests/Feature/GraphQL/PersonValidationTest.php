@@ -22,7 +22,7 @@ function createStudentMutation(string $email, int|string $levelId): array
 {
     return ['query' => "
         mutation {
-            createStudent(input: { name: \"Ana\", email: \"{$email}\", course_level_id: \"{$levelId}\" }) { id email }
+            createStudent(input: { name: \"Ana\", email: \"{$email}\", course_level_ids: [\"{$levelId}\"] }) { id email }
         }
     "];
 }
@@ -60,7 +60,7 @@ it('rejects an email with a CRLF header injection when creating a student', func
         'variables' => ['input' => [
             'name' => 'Ana',
             'email' => "ana@example.com\r\nBcc: x@example.com",
-            'course_level_id' => (string) $level->id,
+            'course_level_ids' => [(string) $level->id],
         ]],
     ])->assertGraphQLValidationKeys(['input.email']);
 
@@ -68,9 +68,9 @@ it('rejects an email with a CRLF header injection when creating a student', func
 });
 
 it('rejects an email already used by another student of the business', function () {
-    $existing = Student::factory()->create(['email' => 'ana@example.com']);
+    $existing = Student::factory()->withLevels()->create(['email' => 'ana@example.com']);
 
-    $this->postGraphQL(createStudentMutation('ana@example.com', $existing->course_level_id))
+    $this->postGraphQL(createStudentMutation('ana@example.com', $existing->courseLevels->first()->id))
         ->assertGraphQLValidationKeys(['input.email']);
 
     expect(Student::count())->toBe(1);
@@ -79,7 +79,7 @@ it('rejects an email already used by another student of the business', function 
 it('allows an email used by a student of another business', function () {
     $other = Business::factory()->create();
     $otherLevel = CourseLevel::factory()->create(['business_id' => $other->id]);
-    Student::factory()->create(['email' => 'ana@example.com', 'business_id' => $other->id, 'course_level_id' => $otherLevel->id]);
+    Student::factory()->withLevels([$otherLevel])->create(['email' => 'ana@example.com', 'business_id' => $other->id]);
     $level = CourseLevel::factory()->create();
 
     $this->postGraphQL(createStudentMutation('ana@example.com', $level->id))
@@ -92,7 +92,7 @@ it('rejects a course level of another business', function () {
     $foreignLevel = CourseLevel::factory()->create(['business_id' => $other->id]);
 
     $this->postGraphQL(createStudentMutation('ana@example.com', $foreignLevel->id))
-        ->assertGraphQLValidationKeys(['input.course_level_id']);
+        ->assertGraphQLValidationKeys(['input.course_level_ids.0']);
 });
 
 it('rejects a teacher with a repeated email', function () {
@@ -129,9 +129,9 @@ it('rejects updating to the email of another person', function (string $type, st
 ]);
 
 it('returns the validation messages in the language of the request', function () {
-    $existing = Student::factory()->create(['email' => 'ana@example.com']);
+    $existing = Student::factory()->withLevels()->create(['email' => 'ana@example.com']);
 
-    $this->postGraphQL(createStudentMutation('ana@example.com', $existing->course_level_id), ['Accept-Language' => 'es'])
+    $this->postGraphQL(createStudentMutation('ana@example.com', $existing->courseLevels->first()->id), ['Accept-Language' => 'es'])
         ->assertGraphQLValidationError('input.email', 'El email ya lo usa otra persona.');
 
     $this->postGraphQL(updateEmailMutation('student', $existing->id, 'no-es-un-email'), ['Accept-Language' => 'es'])

@@ -9,7 +9,7 @@ type Query {
   tracks(name: String @where(operator: "like")): [Track!]! @guard @paginate(defaultCount: 10) @orderBy(column: "name", direction: ASC)
   courseLevels(name: String @where(operator: "like"), track_id: ID @where, sort_order: Int @where): [CourseLevel!]! @guard @paginate(defaultCount: 10) @orderBy(column: "sort_order", direction: ASC)
   courses(id: ID @eq, name: String @where(operator: "like"), level: String @where(operator: "like"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Course!]! @guard @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
-  students(search: String @scope(name: "search"), course_level_id: ID @where, track_id: ID @scope(name: "byTrack")): [Student!]! @guard @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
+  students(search: String @scope(name: "search"), course_level_id: ID @scope(name: "byCourseLevel"), track_id: ID @scope(name: "byTrack")): [Student!]! @guard @paginate(defaultCount: 10) @orderBy(column: "id", direction: DESC)
   schedules(course_id: ID @where, teacher_id: ID @where, day_of_week: Int @where, description: String @where(operator: "like"), group_id: String @where(operator: "like"), starts_at_from: String @scope(name: "startsAtFrom"), starts_at_to: String @scope(name: "startsAtTo")): [Schedule!]! @guard @paginate(defaultCount: 20)
   scheduleGroups(first: Int!, page: Int, course_id: ID, teacher_id: ID, day_of_week: Int, description: String, starts_at_from: String, starts_at_to: String): ScheduleGroupPage! @guard
     @field(resolver: "App\\GraphQL\\Queries\\ScheduleGroups@__invoke")
@@ -42,8 +42,10 @@ type Mutation {
     updateCourse(id: ID!, input: UpdateCourseInput! @spread): Course @guard @update
     deleteCourse(id: ID! @eq(key: "id")): Course @guard @delete(globalId: true)
 
-    createStudent(input: CreateStudentInput! @spread): Student @guard @create
-    updateStudent(id: ID!, input: UpdateStudentInput! @spread): Student @guard @update @validator
+    createStudent(input: CreateStudentInput! @spread): Student @guard
+      @field(resolver: "App\\GraphQL\\Mutations\\CreateStudent@__invoke")
+    updateStudent(id: ID!, input: UpdateStudentInput! @spread): Student @guard @validator
+      @field(resolver: "App\\GraphQL\\Mutations\\UpdateStudent@__invoke")
     deleteStudent(id: ID! @eq(key: "id")): Student @guard @delete(globalId: true)
 
     createSchedule(input: CreateScheduleInput!): Schedule @guard
@@ -122,7 +124,7 @@ type CourseLevel @model(class: "App\\Models\\CourseLevel") {
   texts: String
   previousLevel: CourseLevel @belongsTo(relation: "previousLevel")
   courses: [Course!]! @hasMany
-  students: [Student!]! @hasMany
+  students: [Student!]! @belongsToMany
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -144,9 +146,8 @@ type Student @model(class: "App\\Models\\Student") {
   name: String!
   email: String!
   phone: String
-  level: String
-  course_level_id: ID!
-  courseLevel: CourseLevel @belongsTo(relation: "courseLevel")
+  "One level per track the student studies, at least one."
+  courseLevels: [CourseLevel!]! @belongsToMany(relation: "courseLevels")
   availabilities: [StudentAvailability!]! @hasMany
   enrollments: [StudentEnrollment!]! @hasMany
   schedules: [Schedule!]! @belongsToMany(relation: "schedules")
@@ -283,14 +284,16 @@ input CreateStudentInput @validator {
   name: String!
   email: String!
   phone: String
-  course_level_id: ID!
+  "Levels of the student, one per track."
+  course_level_ids: [ID!]!
 }
 
 input UpdateStudentInput {
   name: String
   email: String
   phone: String
-  course_level_id: ID
+  "Replaces all the student's levels."
+  course_level_ids: [ID!]
 }
 
 input CreateScheduleInput {

@@ -2,6 +2,7 @@
 
 namespace App\Services\Import;
 
+use App\Models\CourseLevel;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Validation\PersonRules;
@@ -248,15 +249,20 @@ class PersonImportService
             $levelError = $this->error('level', 'level_unmapped', ['value' => $record['level']]);
         }
 
-        $data = array_diff_key($record, ['level' => true]);
+        $data = array_diff_key($record, ['level' => true, 'course_level_id' => true]);
         $data['phone'] = $data['phone'] !== '' ? $data['phone'] : null;
+
+        if ($type === 'students') {
+            // One level per row; the rules take the student's list of levels
+            $data['course_level_ids'] = $record['course_level_id'] !== null ? [$record['course_level_id']] : [];
+        }
 
         $rules = $type === 'students'
             ? PersonRules::student($existing?->id)
             : PersonRules::teacher($existing?->id);
 
         if (isset($levelError)) {
-            unset($rules['course_level_id']);
+            unset($rules['course_level_ids'], $rules['course_level_ids.*']);
         }
 
         $validator = Validator::make($data, $rules);
@@ -265,7 +271,7 @@ class PersonImportService
 
         foreach ($validator->failed() as $field => $failedRules) {
             $rule = array_key_first($failedRules);
-            $field = $field === 'course_level_id' ? 'level' : $field;
+            $field = str_starts_with($field, 'course_level_ids') ? 'level' : $field;
             $code = self::RULE_CODES[$rule] ?? 'invalid';
 
             $errors[] = $this->error($field, $code, $rule === 'Max' ? ['max' => $failedRules[$rule][0]] : []);
@@ -314,11 +320,28 @@ class PersonImportService
             $model->phone = $data['phone'];
         }
 
-        if ($type === 'students') {
-            $model->course_level_id = $data['course_level_id'];
-        }
-
         $model->save();
+
+        if ($type === 'students') {
+            $this->saveLevel($model, (int) $data['course_level_id']);
+        }
+    }
+
+    /**
+     * The row's level replaces the student's level in that track and keeps the other
+     * tracks, so importing a file doesn't drop a track the file doesn't mention.
+     */
+    private function saveLevel(Student $student, int $courseLevelId): void
+    {
+        $level = CourseLevel::findOrFail($courseLevelId);
+
+        $ids = $student->courseLevels()
+            ->where('course_levels.track_id', '!=', $level->track_id)
+            ->pluck('course_levels.id')
+            ->push($level->id)
+            ->all();
+
+        $student->syncCourseLevels($ids);
     }
 
     private function newModel(string $type): Model

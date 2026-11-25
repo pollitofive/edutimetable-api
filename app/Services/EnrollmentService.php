@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CourseLevel;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudentEnrollment;
@@ -17,7 +18,7 @@ class EnrollmentService
         $query = Schedule::with([
             'course.courseLevel.track',
             'teacher',
-            'enrollments' => fn ($q) => $q->where('status', 'active')->with('student.courseLevel.track'),
+            'enrollments' => fn ($q) => $q->where('status', 'active')->with('student.courseLevels.track'),
         ])->withCount([
             'enrollments as enrolled_count' => fn ($q) => $q->where('status', 'active'),
         ]);
@@ -72,13 +73,13 @@ class EnrollmentService
             ->pluck('student_id')
             ->toArray();
 
-        $students = Student::with(['courseLevel.track', 'availabilities', 'activeEnrollments.schedule.course'])
-            ->whereHas('courseLevel', fn ($q) => $q->where('track_id', $trackId))
+        $students = Student::with(['courseLevels.track', 'availabilities', 'activeEnrollments.schedule.course'])
+            ->byTrack($trackId)
             ->when($search !== '', fn ($q) => $q->search($search))
             ->orderBy('name')
             ->get();
 
-        return $students->map(function (Student $student) use ($group, $enrolledIds) {
+        return $students->map(function (Student $student) use ($group, $enrolledIds, $trackId) {
             $alreadyEnrolled = in_array($student->id, $enrolledIds);
             $blocked = $alreadyEnrolled
                 ? ['blocked_reason' => 'enrolled', 'conflict' => null]
@@ -91,25 +92,24 @@ class EnrollmentService
                 'already_enrolled' => $alreadyEnrolled,
                 'is_available' => $blocked['blocked_reason'] === null,
                 ...$blocked,
-                'course_level' => $student->courseLevel ? [
-                    'name' => $student->courseLevel->name,
-                    'track' => ['id' => $student->courseLevel->track->id, 'name' => $student->courseLevel->track->name],
-                ] : null,
+                // The level in the schedule's track, not the student's other ones
+                'course_level' => $this->formatLevel($student->levelInTrack($trackId)),
             ];
         })->values()->toArray();
     }
 
     public function getCompatibleSchedules(int $studentId): array
     {
-        $student = Student::with(['courseLevel.track', 'availabilities', 'activeEnrollments.schedule.course'])->findOrFail($studentId);
+        $student = Student::with(['courseLevels.track', 'availabilities', 'activeEnrollments.schedule.course'])->findOrFail($studentId);
 
-        if (! $student->course_level_id) {
+        if ($student->courseLevels->isEmpty()) {
             return ['student' => $this->formatStudent($student), 'schedule_groups' => []];
         }
 
-        $schedules = Schedule::with(['course', 'teacher'])
+        // Schedules of any of the student's levels
+        $schedules = Schedule::with(['course.courseLevel.track', 'teacher'])
             ->withCount(['enrollments as enrolled_count' => fn ($q) => $q->where('status', 'active')])
-            ->whereHas('course', fn ($q) => $q->where('course_level_id', $student->course_level_id))
+            ->whereHas('course', fn ($q) => $q->whereIn('course_level_id', $student->courseLevels->pluck('id')))
             ->get();
 
         $enrolledIds = StudentEnrollment::where('student_id', $studentId)
@@ -125,7 +125,7 @@ class EnrollmentService
 
     public function searchStudents(string $search = ''): Collection
     {
-        return Student::with('courseLevel.track')
+        return Student::with('courseLevels.track')
             ->when($search !== '', fn ($q) => $q->search($search))
             ->orderBy('name')
             ->limit(20)
@@ -135,10 +135,7 @@ class EnrollmentService
                 'name' => $s->name,
                 'email' => $s->email,
                 'phone' => $s->phone,
-                'course_level' => $s->courseLevel ? [
-                    'name' => $s->courseLevel->name,
-                    'track' => ['id' => $s->courseLevel->track->id, 'name' => $s->courseLevel->track->name],
-                ] : null,
+                'course_levels' => $this->formatLevels($s),
             ]);
     }
 
@@ -352,14 +349,34 @@ class EnrollmentService
                     'name' => $e->student->name,
                     'email' => $e->student->email,
                     'phone' => $e->student->phone,
-                    'course_level' => $e->student->courseLevel ? [
-                        'name' => $e->student->courseLevel->name,
-                        'track' => ['id' => $e->student->courseLevel->track->id, 'name' => $e->student->courseLevel->track->name],
-                    ] : null,
+                    // The level in the schedule's track, not the student's other ones
+                    'course_level' => $this->formatLevel($e->student->levelInTrack($schedule->course->courseLevel->track_id)),
                 ],
                 'status' => $e->status,
             ])->values()->toArray(),
         ];
+    }
+
+    /**
+     * @return array{id: int, name: string, track: array{id: int, name: string}}|null
+     */
+    private function formatLevel(?CourseLevel $level): ?array
+    {
+        return $level ? [
+            'id' => $level->id,
+            'name' => $level->name,
+            'track' => ['id' => $level->track->id, 'name' => $level->track->name],
+        ] : null;
+    }
+
+    /**
+     * Uses the courseLevels.track relation, so eager load it.
+     *
+     * @return list<array{id: int, name: string, track: array{id: int, name: string}}>
+     */
+    private function formatLevels(Student $student): array
+    {
+        return $student->courseLevels->map(fn (CourseLevel $l) => $this->formatLevel($l))->values()->all();
     }
 
     private function formatStudent(Student $student): array
@@ -369,10 +386,7 @@ class EnrollmentService
             'name' => $student->name,
             'email' => $student->email,
             'phone' => $student->phone,
-            'course_level' => $student->courseLevel ? [
-                'name' => $student->courseLevel->name,
-                'track' => ['id' => $student->courseLevel->track->id, 'name' => $student->courseLevel->track->name],
-            ] : null,
+            'course_levels' => $this->formatLevels($student),
             'availabilities' => $student->availabilities
                 ->sortBy('day_of_week')
                 ->map(fn ($a) => [
@@ -410,6 +424,8 @@ class EnrollmentService
                 'group_id' => $first->group_id,
                 'schedule_ids' => $group->pluck('id')->toArray(),
                 'course_name' => $first->course->name,
+                // A student with several tracks gets schedules of each one
+                'course_level' => $this->formatLevel($first->course->courseLevel),
                 'teacher_name' => $first->teacher->name,
                 'days_label' => $daysLabel,
                 'starts_at' => substr($first->starts_at, 0, 5),

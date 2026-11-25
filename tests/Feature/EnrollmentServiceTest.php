@@ -37,10 +37,9 @@ beforeEach(function () {
     $this->schedule = ($this->makeSchedule)();
 
     // Same level as the course, available all day Monday and Wednesday
-    $this->student = Student::factory()->create([
+    $this->student = Student::factory()->withLevels([$this->level])->create([
         'name' => 'Bruno Student',
         'email' => 'bruno@example.com',
-        'course_level_id' => $this->level->id,
     ]);
     $this->makeAvailable = function (Student $student, array $days = [1, 3]) {
         foreach ($days as $day) {
@@ -125,6 +124,7 @@ describe('getSchedules', function () {
             ->and($schedule['active_enrollments'])->toHaveCount(1)
             ->and($schedule['active_enrollments'][0]['student']['id'])->toBe($this->student->id)
             ->and($schedule['active_enrollments'][0]['student']['course_level'])->toBe([
+                'id' => $this->level->id,
                 'name' => 'Beginner',
                 'track' => ['id' => $this->track->id, 'name' => 'Kids'],
             ])
@@ -184,10 +184,9 @@ describe('getSchedules', function () {
 
 describe('getEligibleStudents', function () {
     it('lists only the students of the schedule track', function () {
-        $sameTrack = Student::factory()->create([
-            'name' => 'Carla Student',
-            'course_level_id' => CourseLevel::factory()->create(['track_id' => $this->track->id])->id,
-        ]);
+        $sameTrack = Student::factory()
+            ->withLevels([CourseLevel::factory()->create(['track_id' => $this->track->id])])
+            ->create(['name' => 'Carla Student']);
         Student::factory()->create(['name' => 'Other Track']);
 
         $ids = collect($this->service->getEligibleStudents($this->schedule->id))->pluck('id')->all();
@@ -196,7 +195,7 @@ describe('getEligibleStudents', function () {
     });
 
     it('filters by search', function () {
-        Student::factory()->create(['name' => 'Carla Student', 'course_level_id' => $this->level->id]);
+        Student::factory()->withLevels([$this->level])->create(['name' => 'Carla Student']);
 
         $ids = collect($this->service->getEligibleStudents($this->schedule->id, 'bruno@'))->pluck('id')->all();
 
@@ -214,7 +213,7 @@ describe('getEligibleStudents', function () {
             'is_available' => true,
             'blocked_reason' => null,
             'conflict' => null,
-            'course_level' => ['name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']],
+            'course_level' => ['id' => $this->level->id, 'name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']],
         ]);
     });
 
@@ -271,7 +270,7 @@ describe('getCompatibleSchedules', function () {
         $student = $this->service->getCompatibleSchedules($this->student->id)['student'];
 
         expect($student['id'])->toBe($this->student->id)
-            ->and($student['course_level'])->toBe(['name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']])
+            ->and($student['course_levels'])->toBe([['id' => $this->level->id, 'name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']]])
             ->and(array_column($student['availabilities'], 'day_of_week'))->toBe([0, 1, 3])
             ->and($student['availabilities'][0])->toBe([
                 'day_of_week' => 0,
@@ -348,7 +347,7 @@ describe('searchStudents', function () {
             'name' => 'Bruno Student',
             'email' => 'bruno@example.com',
             'phone' => '1122334455',
-            'course_level' => ['name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']],
+            'course_levels' => [['id' => $this->level->id, 'name' => 'Beginner', 'track' => ['id' => $this->track->id, 'name' => 'Kids']]],
         ]]);
     });
 

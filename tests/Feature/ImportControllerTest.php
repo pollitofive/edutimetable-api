@@ -230,7 +230,7 @@ describe('preview', function () {
     it('does not take people of another business as duplicates', function () {
         $other = Business::factory()->create();
         $otherLevel = CourseLevel::factory()->create(['business_id' => $other->id]);
-        Student::factory()->create(['email' => 'ana@example.com', 'business_id' => $other->id, 'course_level_id' => $otherLevel->id]);
+        Student::factory()->withLevels([$otherLevel])->create(['email' => 'ana@example.com', 'business_id' => $other->id]);
 
         $this->postJson('/api/imports/students/preview', studentImport(
             [['Ana', 'ana@example.com', '', 'Inicial']],
@@ -300,7 +300,7 @@ describe('commit', function () {
         expect(Student::count())->toBe(1)
             ->and($ana->name)->toBe('Ana')
             ->and($ana->phone)->toBe('11 4444-5555')
-            ->and($ana->course_level_id)->toBe($this->level->id)
+            ->and($ana->courseLevels->pluck('id')->all())->toBe([$this->level->id])
             ->and($ana->business_id)->toBe($this->business->id);
     });
 
@@ -329,8 +329,23 @@ describe('commit', function () {
         expect($student->name)->toBe('Cambiado')
             ->and($student->email)->toBe('Existe@example.com')
             ->and($student->phone)->toBe('1234')
-            ->and($student->course_level_id)->toBe($this->level->id)
+            ->and($student->courseLevels->pluck('id')->all())->toBe([$this->level->id])
             ->and(Student::count())->toBe(1);
+    });
+
+    it('replaces only the level of the row track when updating a student with several tracks', function () {
+        $sameTrackLevel = CourseLevel::factory()->create(['track_id' => $this->level->track_id]);
+        $otherTrackLevel = CourseLevel::factory()->create();
+        $student = Student::factory()->withLevels([$sameTrackLevel, $otherTrackLevel])->create(['email' => 'existe@example.com']);
+
+        $this->postJson('/api/imports/students/commit', studentImport(
+            [['Existe', 'existe@example.com', '', 'Inicial']],
+            ['Inicial' => $this->level->id],
+            'update',
+        ))->assertOk()->assertJsonPath('updated', 1);
+
+        expect($student->courseLevels()->pluck('course_levels.id')->sort()->values()->all())
+            ->toBe(collect([$this->level->id, $otherTrackLevel->id])->sort()->values()->all());
     });
 
     it('imports teachers', function () {

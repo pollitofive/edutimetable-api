@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CourseLevel extends Model
@@ -36,8 +37,8 @@ class CourseLevel extends Model
         return $this->hasMany(Course::class, 'course_level_id');
     }
 
-    public function students(): HasMany
+    public function students(): BelongsToMany
     {
-        return $this->hasMany(Student::class, 'course_level_id');
+        return $this->belongsToMany(Student::class)->withTimestamps();
     }
 }

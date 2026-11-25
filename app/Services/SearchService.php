@@ -27,7 +27,7 @@ class SearchService
 
     private function students(string $term): array
     {
-        return Student::with('courseLevel.track')
+        return Student::with('courseLevels.track')
             ->search($term)
             ->orderBy('name')
             ->limit(self::LIMIT_PER_TYPE)
@@ -36,8 +36,11 @@ class SearchService
                 'id' => $s->id,
                 'name' => $s->name,
                 'email' => $s->email,
-                'level' => $s->courseLevel?->name,
-                'track' => $s->courseLevel?->track?->name,
+                // One per track the student studies
+                'levels' => $s->courseLevels->map(fn ($l) => [
+                    'level' => $l->name,
+                    'track' => $l->track?->name,
+                ])->values()->all(),
             ])
             ->all();
     }

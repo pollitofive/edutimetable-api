@@ -15,5 +15,6 @@ return [
         'max' => 'The :field is longer than :max characters.',
         'taken' => 'The email is already used by someone else.',
         'invalid' => 'The :field is not valid.',
+        'one_level_per_track' => 'Choose only one level per track.',
     ],
 ];
