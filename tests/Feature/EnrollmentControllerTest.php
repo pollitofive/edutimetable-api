@@ -454,7 +454,7 @@ describe('POST /enrollments', function () {
 describe('enrollment modals', function () {
     beforeEach(function () {
         // Same level, so the student is offered the course and listed for it
-        $this->student->forceFill(['course_level_id' => $this->course->course_level_id])->save();
+        $this->student->syncCourseLevels([$this->course->course_level_id]);
         $this->schedule->update(['capacity' => 5]);
         StudentAvailability::factory()->create([
             'student_id' => $this->student->id,

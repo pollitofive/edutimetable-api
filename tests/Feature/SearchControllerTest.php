@@ -2,8 +2,10 @@
 
 use App\Models\Business;
 use App\Models\Course;
+use App\Models\CourseLevel;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Models\Track;
 use App\Services\CurrentBusiness;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -18,7 +20,9 @@ beforeEach(function () {
 });
 
 it('returns the results grouped by type', function () {
-    $student = Student::factory()->create(['name' => 'Lucía Pérez', 'email' => 'lucia@example.com']);
+    $english = CourseLevel::factory()->create(['name' => 'B1', 'track_id' => Track::factory()->create(['name' => 'Inglés'])->id]);
+    $portuguese = CourseLevel::factory()->create(['name' => 'A2', 'track_id' => Track::factory()->create(['name' => 'Portugués'])->id]);
+    $student = Student::factory()->withLevels([$english, $portuguese])->create(['name' => 'Lucía Pérez', 'email' => 'lucia@example.com']);
     Teacher::factory()->create(['name' => 'Lucas Gómez', 'email' => 'lucas@example.com']);
     Course::factory()->create(['name' => 'Inglés Lunes']);
 
@@ -29,8 +33,10 @@ it('returns the results grouped by type', function () {
             'id' => $student->id,
             'name' => 'Lucía Pérez',
             'email' => 'lucia@example.com',
-            'level' => $student->courseLevel->name,
-            'track' => $student->courseLevel->track->name,
+        ])
+        ->and(collect($response->json('students.0.levels'))->sortBy('track')->values()->all())->toBe([
+            ['level' => 'B1', 'track' => 'Inglés'],
+            ['level' => 'A2', 'track' => 'Portugués'],
         ])
         ->and($response->json('teachers.0.name'))->toBe('Lucas Gómez')
         ->and($response->json('courses'))->toBe([]);

@@ -28,8 +28,8 @@ beforeEach(function () {
     // Own entities (business A)
     $this->course = Course::factory()->create();
     $this->teacher = Teacher::factory()->create();
-    $this->student = Student::factory()->create();
     $this->level = CourseLevel::factory()->create();
+    $this->student = Student::factory()->withLevels([$this->level])->create();
     $this->track = Track::factory()->create();
 
     // Another business's entities (business B)
@@ -182,7 +182,7 @@ describe('courses and students', function () {
     it('rejects a course level of another business on createStudent', function () {
         expectRejected($this->postGraphQL(['query' => "
             mutation {
-                createStudent(input: { name: \"Nuevo\", email: \"nuevo@test.com\", course_level_id: {$this->otherLevel->id} }) { id }
+                createStudent(input: { name: \"Nuevo\", email: \"nuevo@test.com\", course_level_ids: [{$this->otherLevel->id}] }) { id }
             }
         "]));
 
@@ -192,11 +192,11 @@ describe('courses and students', function () {
     it('rejects a course level of another business on updateStudent', function () {
         expectRejected($this->postGraphQL(['query' => "
             mutation {
-                updateStudent(id: {$this->student->id}, input: { course_level_id: {$this->otherLevel->id} }) { id }
+                updateStudent(id: {$this->student->id}, input: { course_level_ids: [{$this->otherLevel->id}] }) { id }
             }
         "]));
 
-        expect($this->student->fresh()->course_level_id)->toBe($this->student->course_level_id);
+        expect($this->student->courseLevels()->pluck('course_levels.id')->all())->toBe([$this->level->id]);
     });
 
     it('still accepts a course level of the current business', function () {

@@ -2,6 +2,7 @@
 
 namespace App\Validation;
 
+use App\Rules\OneLevelPerTrack;
 use App\Services\CurrentBusiness;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
@@ -26,7 +27,8 @@ final class PersonRules
     public static function student(?int $ignoreId = null, bool $partial = false): array
     {
         return self::person('students', $ignoreId, $partial) + [
-            'course_level_id' => self::field($partial, ['integer', 'exists_in_business:course_levels']),
+            'course_level_ids' => self::field($partial, ['array', 'min:1', new OneLevelPerTrack]),
+            'course_level_ids.*' => ['integer', 'distinct', 'exists_in_business:course_levels'],
         ];
     }
 
@@ -53,9 +55,12 @@ final class PersonRules
             'email.max' => self::message('max', 'email'),
             'email.unique' => self::message('taken', 'email'),
             'phone.max' => self::message('max', 'phone'),
-            'course_level_id.required' => self::message('required', 'level'),
-            'course_level_id.integer' => self::message('invalid', 'level'),
-            'course_level_id.exists_in_business' => self::message('invalid', 'level'),
+            'course_level_ids.required' => self::message('required', 'level'),
+            'course_level_ids.array' => self::message('invalid', 'level'),
+            'course_level_ids.min' => self::message('required', 'level'),
+            'course_level_ids.*.integer' => self::message('invalid', 'level'),
+            'course_level_ids.*.distinct' => self::message('invalid', 'level'),
+            'course_level_ids.*.exists_in_business' => self::message('invalid', 'level'),
         ];
     }
 

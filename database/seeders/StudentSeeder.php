@@ -11,6 +11,9 @@ class StudentSeeder extends Seeder
 {
     private const TOTAL_STUDENTS = 70;
 
+    // Students that also study a second track, so the multi-track case shows up in the demo.
+    private const SECOND_TRACK_STUDENTS = 10;
+
     // Funnel shape: more students in the entry levels, fewer as they advance.
     private const LEVEL_WEIGHTS = [
         'beginner' => 0.30,
@@ -52,18 +55,45 @@ class StudentSeeder extends Seeder
             for ($i = 0; $i < $studentCount; $i++) {
                 $name = $names[$index];
 
-                Student::create([
+                $student = Student::create([
                     'name' => $name,
                     'email' => Str::slug($name, '.').$index.'@mail.com',
                     'phone' => rand(0, 1) ? '+54 9 '.rand(11, 299).' '.rand(1000000, 9999999) : null,
-                    'course_level_id' => $courseLevelId,
                 ]);
+                $student->syncCourseLevels([$courseLevelId]);
 
                 $index++;
             }
         }
 
-        $this->command->info("Created {$index} students.");
+        $multiTrack = $this->addSecondTrack();
+
+        $this->command->info("Created {$index} students ({$multiTrack} of them in two tracks).");
+    }
+
+    /**
+     * Gives SECOND_TRACK_STUDENTS random students a level in another track, mostly the entry
+     * levels (people usually start the second language from scratch).
+     */
+    private function addSecondTrack(): int
+    {
+        $levelsByTrack = CourseLevel::orderBy('sort_order')->get()->groupBy('track_id');
+
+        if ($levelsByTrack->count() < 2) {
+            return 0;
+        }
+
+        $students = Student::with('courseLevels')->inRandomOrder()->limit(self::SECOND_TRACK_STUDENTS)->get();
+
+        foreach ($students as $student) {
+            $currentLevel = $student->courseLevels->first();
+            $otherTrackId = $levelsByTrack->keys()->reject(fn ($id) => $id === $currentLevel->track_id)->random();
+            $secondLevel = $levelsByTrack[$otherTrackId]->take(2)->random();
+
+            $student->syncCourseLevels([$currentLevel->id, $secondLevel->id]);
+        }
+
+        return $students->count();
     }
 
     /**

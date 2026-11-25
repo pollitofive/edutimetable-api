@@ -15,5 +15,6 @@ return [
         'max' => 'El :field supera los :max caracteres.',
         'taken' => 'El email ya lo usa otra persona.',
         'invalid' => 'El :field no es válido.',
+        'one_level_per_track' => 'Elegí un solo nivel por pista.',
     ],
 ];
