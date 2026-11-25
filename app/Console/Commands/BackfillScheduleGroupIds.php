@@ -29,8 +29,9 @@ class BackfillScheduleGroupIds extends Command
     {
         $this->info('Starting backfill of schedule group_ids...');
 
-        // Get all schedules without group_id
-        $schedulesWithoutGroupId = Schedule::whereNull('group_id')->get();
+        // Get all schedules without group_id. Works across every business on
+        // purpose (runs without a business context), so the tenant scope is removed.
+        $schedulesWithoutGroupId = Schedule::withoutGlobalScope('business')->whereNull('group_id')->get();
 
         if ($schedulesWithoutGroupId->isEmpty()) {
             $this->info('No schedules found without group_id. Nothing to backfill.');
